@@ -1,0 +1,1879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>边界之内：X3-F 分体式飞行汽车安全分析 | 系统安全工程课程作业</title>
+  <meta name="description" content="小鹏汇天 X3-F 分体式飞行汽车的全方位安全分析：五层安全架构、12 个危害场景、STPA/FTA/FMEA、安全需求与证据缺口。证据截止 2026-11-22。">
+  <meta name="author" content="飞行汽车技术基础 · 课程作业 02">
+  <meta name="theme-color" content="#0e242b">
+  <meta property="og:title" content="边界之内：X3-F 分体式飞行汽车安全分析">
+  <meta property="og:description" content="六旋翼的冗余，能不能兜住分合接口、热失控、共模失效与人的误判？">
+  <meta property="og:type" content="article">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:image" content="assets/img/preview.jpg">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body id="top">
+  <a class="skip-link" href="#main">跳到正文</a>
+  <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+
+  <header class="site-header" id="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="返回顶部">
+        <span class="brand-mark">S/C</span>
+        <span class="brand-text">安全论证档案<small>X3-F / SYSTEM SAFETY</small></span>
+      </a>
+      <nav class="site-nav" id="site-nav" aria-label="章节导航">
+        <a href="#summary">结论</a>
+        <a href="#system">对象</a>
+        <a href="#method">方法</a>
+        <a href="#hazards">危害</a>
+        <a href="#docking">分合</a>
+        <a href="#flight">飞行</a>
+        <a href="#human">人因</a>
+        <a href="#security">信息安全</a>
+        <a href="#requirements">验证</a>
+        <a href="#sources">来源</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" type="button" data-print aria-label="打印或存为 PDF">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v7H7z"/></svg>
+          <span>打印</span>
+        </button>
+        <button class="menu-btn" type="button" id="menu-btn" aria-controls="site-nav" aria-expanded="false" aria-label="打开导航菜单">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <div class="kicker reveal">
+            <span class="kicker-dot"></span>
+            <span class="kicker-text">飞行汽车技术基础 · 课程作业 02 / SYSTEM SAFETY DOSSIER</span>
+          </div>
+          <h1 id="hero-title" class="reveal">
+            把一架飞机<br>
+            装进车里，<br>
+            <em>安全吗？</em>
+          </h1>
+          <p class="hero-sub reveal">小鹏汇天 <strong>X3-F</strong> 分体式飞行汽车 · 五层安全架构与全生命周期风险分析</p>
+          <p class="hero-lead reveal">
+            分体式架构绕开了陆空一体化的重量死结，却把风险集中到三个接口：机械锁、能量流，以及人对模式的理解。本文不做参数复述，而是按系统安全工程的五层框架，逐层给出危害、失效路径、安全需求与证据缺口。
+          </p>
+          <div class="hero-meta reveal">
+            <span>对象 / X3-F · 陆地航母</span>
+            <span>方法 / ARP4754A · STPA · FTA</span>
+            <span>证据截止 / 2026-11-22</span>
+          </div>
+          <div class="hero-cta reveal">
+            <a class="btn btn--primary" href="#summary">先看结论 <span aria-hidden="true">↓</span></a>
+            <button class="btn btn--ghost" type="button" data-print>打印 / 存为 PDF</button>
+          </div>
+        </div>
+
+        <figure class="hero-figure reveal" aria-labelledby="hero-fig-caption">
+          <div class="figure-head">
+            <span>FIG. 01 / SAFETY CASE MAP</span>
+            <span>5 LAYERS · 1 ODD</span>
+          </div>
+          <svg class="hero-svg" viewBox="0 0 900 760" role="img" aria-labelledby="hero-svg-title hero-svg-desc">
+            <title id="hero-svg-title">X3-F 五层安全防线与运行边界示意图</title>
+            <desc id="hero-svg-desc">中央是 X3-F 六旋翼飞行体俯视图，周围分布被动安全、功能安全、预期功能安全、行为安全、信息安全五层防线，外层是昼间目视运行边界，四个红色标记指出分合、热失控、控制共模和人因风险。</desc>
+            <defs>
+              <pattern id="heroGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M30 0H0V30" fill="none" stroke="#f3efe6" stroke-opacity=".07"/>
+              </pattern>
+              <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <marker id="nodeArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M0 0 10 5 0 10z" fill="#f3efe6" fill-opacity=".5"/>
+              </marker>
+            </defs>
+            <rect width="900" height="760" fill="#0e242b"/>
+            <rect width="900" height="760" fill="url(#heroGrid)"/>
+            <rect x="30" y="42" width="840" height="676" rx="18" fill="none" stroke="#f3efe6" stroke-opacity=".22" stroke-dasharray="8 8"/>
+            <text x="54" y="72" class="svg-mono">ODD / DAY VFR · PRIVATE · TRAINING</text>
+            <text x="846" y="72" text-anchor="end" class="svg-mono">5 LAYERS / 1 BOUNDARY</text>
+
+            <g class="hero-rings" fill="none" stroke="#f3efe6" stroke-opacity=".12">
+              <circle cx="450" cy="380" r="286"/>
+              <circle cx="450" cy="380" r="224"/>
+              <circle cx="450" cy="380" r="162"/>
+              <circle cx="450" cy="380" r="100"/>
+            </g>
+            <path d="M450 94V666M164 380H736" stroke="#f3efe6" stroke-opacity=".08" stroke-dasharray="2 10"/>
+
+            <!-- Five safety layers -->
+            <g class="safety-node" transform="translate(58,112)">
+              <rect width="196" height="78" rx="3" fill="#17343b" stroke="#e9b04a" stroke-opacity=".7"/>
+              <text x="16" y="24" class="svg-kicker">05 / SECURITY</text>
+              <text x="16" y="46" class="svg-label">信息安全</text>
+              <text x="16" y="64" class="svg-small">TARA · 更新 · 访问控制</text>
+            </g>
+            <g class="safety-node" transform="translate(58,570)">
+              <rect width="196" height="78" rx="3" fill="#17343b" stroke="#e0522b" stroke-opacity=".7"/>
+              <text x="16" y="24" class="svg-kicker">04 / BEHAVIOR</text>
+              <text x="16" y="46" class="svg-label">行为安全</text>
+              <text x="16" y="64" class="svg-small">飞行员 · 维修 · 运行</text>
+            </g>
+            <g class="safety-node" transform="translate(646,112)">
+              <rect width="196" height="78" rx="3" fill="#17343b" stroke="#78a9a3" stroke-opacity=".7"/>
+              <text x="16" y="24" class="svg-kicker">01 / PASSIVE</text>
+              <text x="16" y="46" class="svg-label">被动安全</text>
+              <text x="16" y="64" class="svg-small">坠撞 · 约束 · 撤离 · 防火</text>
+            </g>
+            <g class="safety-node" transform="translate(646,292)">
+              <rect width="196" height="78" rx="3" fill="#17343b" stroke="#8fb6c8" stroke-opacity=".7"/>
+              <text x="16" y="24" class="svg-kicker">02 / FUNCTIONAL</text>
+              <text x="16" y="46" class="svg-label">功能安全</text>
+              <text x="16" y="64" class="svg-small">冗余 · 互锁 · 失效可控</text>
+            </g>
+            <g class="safety-node" transform="translate(646,472)">
+              <rect width="196" height="78" rx="3" fill="#17343b" stroke="#9bbf8f" stroke-opacity=".7"/>
+              <text x="16" y="24" class="svg-kicker">03 / SOTIF</text>
+              <text x="16" y="46" class="svg-label">预期功能安全</text>
+              <text x="16" y="64" class="svg-small">ODD · 场景 · 人机接口</text>
+            </g>
+
+            <g stroke="#f3efe6" stroke-opacity=".28" stroke-dasharray="4 6">
+              <path d="M254 152 356 286"/>
+              <path d="M254 610 356 474"/>
+              <path d="M646 152 544 286"/>
+              <path d="M646 332 544 356"/>
+              <path d="M646 512 544 426"/>
+            </g>
+            <g fill="#f3efe6" fill-opacity=".4">
+              <circle cx="254" cy="152" r="3"/><circle cx="254" cy="610" r="3"/>
+              <circle cx="646" cy="152" r="3"/><circle cx="646" cy="332" r="3"/><circle cx="646" cy="512" r="3"/>
+            </g>
+
+            <!-- Aircraft top view -->
+            <g class="hero-craft" transform="translate(450 380)">
+              <circle r="178" fill="none" stroke="#e0522b" stroke-opacity=".28" stroke-dasharray="2 9"/>
+              <text x="0" y="-190" text-anchor="middle" class="svg-mono svg-mono--accent">CONTROL ENVELOPE / NOT TO SCALE</text>
+              <g class="craft-arms" stroke="#9fb4b2" stroke-width="7" stroke-linecap="round">
+                <line x1="0" y1="0" x2="0" y2="-150"/>
+                <line x1="0" y1="0" x2="130" y2="-75"/>
+                <line x1="0" y1="0" x2="130" y2="75"/>
+                <line x1="0" y1="0" x2="0" y2="150"/>
+                <line x1="0" y1="0" x2="-130" y2="75"/>
+                <line x1="0" y1="0" x2="-130" y2="-75"/>
+              </g>
+              <g class="rotor" transform="translate(0,-150)">
+                <circle r="56" fill="#102a33" stroke="#f3efe6" stroke-opacity=".55" stroke-width="2"/>
+                <circle r="44" fill="none" stroke="#f3efe6" stroke-opacity=".18"/>
+                <g class="rotor-blades" stroke="#f3efe6" stroke-width="8" stroke-linecap="round">
+                  <path d="M0 0V-42"/><path d="M0 0V-42" transform="rotate(120)"/><path d="M0 0V-42" transform="rotate(240)"/>
+                </g>
+                <circle r="6" fill="#e0522b"/>
+              </g>
+              <g class="rotor" transform="translate(130,-75)">
+                <circle r="56" fill="#102a33" stroke="#f3efe6" stroke-opacity=".55" stroke-width="2"/>
+                <circle r="44" fill="none" stroke="#f3efe6" stroke-opacity=".18"/>
+                <g class="rotor-blades" stroke="#f3efe6" stroke-width="8" stroke-linecap="round">
+                  <path d="M0 0V-42"/><path d="M0 0V-42" transform="rotate(120)"/><path d="M0 0V-42" transform="rotate(240)"/>
+                </g>
+                <circle r="6" fill="#e0522b"/>
+              </g>
+              <g class="rotor" transform="translate(130,75)">
+                <circle r="56" fill="#102a33" stroke="#f3efe6" stroke-opacity=".55" stroke-width="2"/>
+                <circle r="44" fill="none" stroke="#f3efe6" stroke-opacity=".18"/>
+                <g class="rotor-blades" stroke="#f3efe6" stroke-width="8" stroke-linecap="round">
+                  <path d="M0 0V-42"/><path d="M0 0V-42" transform="rotate(120)"/><path d="M0 0V-42" transform="rotate(240)"/>
+                </g>
+                <circle r="6" fill="#e0522b"/>
+              </g>
+              <g class="rotor" transform="translate(0,150)">
+                <circle r="56" fill="#102a33" stroke="#f3efe6" stroke-opacity=".55" stroke-width="2"/>
+                <circle r="44" fill="none" stroke="#f3efe6" stroke-opacity=".18"/>
+                <g class="rotor-blades" stroke="#f3efe6" stroke-width="8" stroke-linecap="round">
+                  <path d="M0 0V-42"/><path d="M0 0V-42" transform="rotate(120)"/><path d="M0 0V-42" transform="rotate(240)"/>
+                </g>
+                <circle r="6" fill="#e0522b"/>
+              </g>
+              <g class="rotor" transform="translate(-130,75)">
+                <circle r="56" fill="#102a33" stroke="#f3efe6" stroke-opacity=".55" stroke-width="2"/>
+                <circle r="44" fill="none" stroke="#f3efe6" stroke-opacity=".18"/>
+                <g class="rotor-blades" stroke="#f3efe6" stroke-width="8" stroke-linecap="round">
+                  <path d="M0 0V-42"/><path d="M0 0V-42" transform="rotate(120)"/><path d="M0 0V-42" transform="rotate(240)"/>
+                </g>
+                <circle r="6" fill="#e0522b"/>
+              </g>
+              <g class="rotor" transform="translate(-130,-75)">
+                <circle r="56" fill="#102a33" stroke="#f3efe6" stroke-opacity=".55" stroke-width="2"/>
+                <circle r="44" fill="none" stroke="#f3efe6" stroke-opacity=".18"/>
+                <g class="rotor-blades" stroke="#f3efe6" stroke-width="8" stroke-linecap="round">
+                  <path d="M0 0V-42"/><path d="M0 0V-42" transform="rotate(120)"/><path d="M0 0V-42" transform="rotate(240)"/>
+                </g>
+                <circle r="6" fill="#e0522b"/>
+              </g>
+              <ellipse rx="58" ry="94" fill="#f3efe6" stroke="#0e242b" stroke-width="3"/>
+              <ellipse rx="40" ry="70" fill="#dbe8e5" stroke="#0e242b" stroke-width="2"/>
+              <path d="M-34 0H34M-30 -36H30M-30 36H30" stroke="#0e242b" stroke-opacity=".28"/>
+              <text x="0" y="-6" text-anchor="middle" class="svg-craft-label">X3-F</text>
+              <text x="0" y="18" text-anchor="middle" class="svg-craft-small">2 SEATS</text>
+            </g>
+
+            <!-- Hazard markers -->
+            <g class="hazard-marker" transform="translate(300,540)">
+              <circle r="18" fill="#e0522b" fill-opacity=".16" stroke="#e0522b"/>
+              <text x="0" y="4" text-anchor="middle" class="svg-mono svg-mono--accent">01</text>
+            </g>
+            <g class="hazard-marker" transform="translate(600,540)">
+              <circle r="18" fill="#e0522b" fill-opacity=".16" stroke="#e0522b"/>
+              <text x="0" y="4" text-anchor="middle" class="svg-mono svg-mono--accent">05</text>
+            </g>
+            <g class="hazard-marker" transform="translate(600,220)">
+              <circle r="18" fill="#e0522b" fill-opacity=".16" stroke="#e0522b"/>
+              <text x="0" y="4" text-anchor="middle" class="svg-mono svg-mono--accent">06</text>
+            </g>
+            <g class="hazard-marker" transform="translate(300,220)">
+              <circle r="18" fill="#e0522b" fill-opacity=".16" stroke="#e0522b"/>
+              <text x="0" y="4" text-anchor="middle" class="svg-mono svg-mono--accent">07</text>
+            </g>
+
+            <g class="hero-legend">
+              <text x="54" y="704" class="svg-mono">A / 灾难性</text>
+              <rect x="140" y="695" width="16" height="3" fill="#e0522b"/>
+              <text x="166" y="704" class="svg-mono">B / 危险</text>
+              <rect x="238" y="695" width="16" height="3" fill="#e9b04a"/>
+              <text x="264" y="704" class="svg-mono">C / 主要</text>
+              <rect x="336" y="695" width="16" height="3" fill="#9bbf8f"/>
+              <text x="362" y="704" class="svg-mono">D / 次要</text>
+              <text x="846" y="704" text-anchor="end" class="svg-mono">SCHEMATIC / 2026</text>
+              <text x="54" y="730" class="svg-mono">HAZARD / 01 DOCK · 05 THERMAL · 06 CONTROL · 07 HUMAN</text>
+            </g>
+          </svg>
+          <figcaption id="hero-fig-caption">
+            <span>图 1</span> 五层安全防线与运行边界。中央为六旋翼飞行体俯视示意；红色标记是本文识别的四类高后果风险入口。示意图不按比例。
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="wrap hero-stats reveal" aria-label="关键数据">
+        <div class="stat">
+          <span class="stat-value" data-count="12">12</span><span class="stat-unit">项</span>
+          <span class="stat-label">危害场景 / H-01—H-12</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" data-count="5">5</span><span class="stat-unit">层</span>
+          <span class="stat-label">被动 → 功能 → SOTIF → 行为 → 信息安全</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" data-count="13">13</span><span class="stat-unit">条</span>
+          <span class="stat-label">可追溯的安全需求 / SR-01—SR-13</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" data-count="8">8</span><span class="stat-unit">项</span>
+          <span class="stat-label">公开证据缺口 / 截至 2026-11-22</span>
+        </div>
+        <p class="stat-note">数字是本文分析的结构化结果，不是企业或局方的安全结论。危害等级与证据缺口均基于公开资料判断。</p>
+      </div>
+    </section>
+
+    <!-- 01 SUMMARY -->
+    <section class="section" id="summary" aria-labelledby="summary-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">01 / EXECUTIVE SUMMARY</div>
+          <h2 id="summary-title">它的安全，取决于五个“同时成立”</h2>
+          <p class="section-dek">如果只记住一句话：X3-F 的风险不在“能不能飞”，而在“每一次起飞前，边界是否仍然成立”。</p>
+        </div>
+
+        <div class="findings">
+          <article class="finding reveal">
+            <div class="finding-no">01</div>
+            <h3>真正的单点，不在旋翼，而在接口</h3>
+            <p>六旋翼可以容忍一个电机失效，但分合机构的假锁止、单路位置传感、共用电源，会把“地面接口”变成“飞行前提”的单点。传统适航经验对这类车载式接口并不熟悉。</p>
+            <div class="finding-tag">接口安全 / H-01 · H-02</div>
+          </article>
+          <article class="finding reveal">
+            <div class="finding-no">02</div>
+            <h3>20 分钟不是续航数字，是安全余量</h3>
+            <p>航时与航程越短，备降与复飞的选择越少；电池既是升力来源，也是火灾载荷。高能量密度与热失控，是同一枚硬币的两面。</p>
+            <div class="finding-tag">能量安全 / H-05 · H-09</div>
+          </article>
+          <article class="finding reveal">
+            <div class="finding-no">03</div>
+            <h3>差异推力控制，没有机械备份</h3>
+            <p>六旋翼靠不同旋翼的转速差控制姿态。飞控、IMU、总线或共享电源的共模故障，比单个电机失效更危险。“单点失效安全”不等于“共模失效安全”。</p>
+            <div class="finding-tag">控制安全 / H-04 · H-06</div>
+          </article>
+          <article class="finding reveal">
+            <div class="finding-no">04</div>
+            <h3>降低门槛，也可能是降低冗余</h3>
+            <p>单驾驶杆、手自动切换、“5 分钟上手”的叙事，减少了训练成本，也放大了模式混淆、情景意识丧失与计划延续偏差。人不是系统的备份，人也是系统的一部分。</p>
+            <div class="finding-tag">人因安全 / H-07</div>
+          </article>
+          <article class="finding reveal">
+            <div class="finding-no">05</div>
+            <h3>边界本身就是安全设备</h3>
+            <p>昼间目视、私人娱乐/培训、不商业载客，不是市场限制，而是安全论证成立的前提。一旦越界，原有证据链随之失效。</p>
+            <div class="finding-tag">运行安全 / H-08 · H-11</div>
+          </article>
+        </div>
+
+        <div class="summary-lower">
+          <div class="verdict reveal">
+            <div class="verdict-mark" aria-hidden="true">“</div>
+            <p>X3-F 近期最诚实的安全主张，不是“它比汽车更安全”，而是：<strong>在明确边界内，它的风险可以被识别、被限制、被验证、被接受。</strong></p>
+            <span>— 本报告的安全主张 / G1</span>
+          </div>
+
+          <aside class="maturity reveal" aria-labelledby="maturity-title">
+            <div class="maturity-head">
+              <div>
+                <div class="mono-label">PUBLIC EVIDENCE MATURITY</div>
+                <h3 id="maturity-title">公开证据成熟度</h3>
+              </div>
+              <span class="maturity-scale">0 — 4</span>
+            </div>
+            <div class="maturity-row">
+              <span>被动安全</span>
+              <div class="bar" role="img" aria-label="被动安全公开证据成熟度 2.2，满分 4"><i style="--v:55%"></i></div>
+              <b>2.2</b>
+            </div>
+            <div class="maturity-row">
+              <span>功能安全</span>
+              <div class="bar" role="img" aria-label="功能安全公开证据成熟度 2.4，满分 4"><i style="--v:60%"></i></div>
+              <b>2.4</b>
+            </div>
+            <div class="maturity-row">
+              <span>预期功能安全</span>
+              <div class="bar" role="img" aria-label="预期功能安全公开证据成熟度 1.6，满分 4"><i style="--v:40%"></i></div>
+              <b>1.6</b>
+            </div>
+            <div class="maturity-row">
+              <span>行为安全</span>
+              <div class="bar" role="img" aria-label="行为安全公开证据成熟度 2.0，满分 4"><i style="--v:50%"></i></div>
+              <b>2.0</b>
+            </div>
+            <div class="maturity-row">
+              <span>信息安全</span>
+              <div class="bar" role="img" aria-label="信息安全公开证据成熟度 1.2，满分 4"><i style="--v:30%"></i></div>
+              <b>1.2</b>
+            </div>
+            <p class="maturity-note">评分是“公开证据成熟度”，不是产品安全评分。0 = 无公开信息；4 = 有可核查的运行数据。分数越低，不代表一定不安全，而代表外部无法验证。</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 SYSTEM -->
+    <section class="section section--paper" id="system" aria-labelledby="system-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">02 / SYSTEM &amp; BOUNDARY</div>
+          <h2 id="system-title">先画清楚：到底在分析哪一套系统</h2>
+          <p class="section-dek">X3-F 不是一架孤立的飞行器，而是“飞行体 + 分合接口 + 陆行体 + 运行体系”的组合。安全论证必须覆盖四个层级，而不能只审飞行体。</p>
+        </div>
+
+        <div class="system-grid">
+          <article class="system-card reveal">
+            <div class="system-card-head">
+              <span class="mono-label">L1 / AIR MODULE</span>
+              <span class="system-role">升力 · 控制 · 乘员保护</span>
+            </div>
+            <h3>飞行体 X3-F</h3>
+            <p>六旋翼、双涵道、双座、纯电、定距桨。机臂、桨叶与起落架可折叠，折叠后收纳于陆行体后舱。它是安全分析的核心，但不是全部。</p>
+            <dl class="spec-list">
+              <div><dt>构型</dt><dd>六旋翼双涵道 / 分布式电推进</dd></div>
+              <div><dt>控制</dt><dd>差异转速控制姿态 / 单杆操纵</dd></div>
+              <div><dt>模式</dt><dd>手动 / 自动两种驾驶模式</dd></div>
+              <div><dt>材料</dt><dd>碳纤维机身 / 可折叠结构</dd></div>
+            </dl>
+            <p class="card-source">来源：CAAC 专用条件草案 <a class="cite" href="#ref1">[1]</a>；企业公开资料 <a class="cite" href="#ref3">[3]</a><a class="cite" href="#ref4">[4]</a></p>
+          </article>
+
+          <article class="system-card reveal">
+            <div class="system-card-head">
+              <span class="mono-label">L2 / INTERFACE</span>
+              <span class="system-role">运输固定 · 构型确认 · 隔离</span>
+            </div>
+            <h3>车载自动分合机构</h3>
+            <p>负责飞行体与陆行体之间的机械锁止、电气连接、数据握手与热管理连接。企业口径约 2–5 分钟完成分离或结合；不同公开报道存在差异。</p>
+            <dl class="spec-list">
+              <div><dt>接口</dt><dd>机械 / 电气 / 数据 / 热管理</dd></div>
+              <div><dt>动作</dt><dd>对准 → 锁止 → 连接 → 自检</dd></div>
+              <div><dt>安全角色</dt><dd>飞行前提，而非普通附件</dd></div>
+              <div><dt>关键未知</dt><dd>双通道确认 / 误锁止 / 循环寿命</dd></div>
+            </dl>
+            <p class="card-source">来源：企业公开资料 <a class="cite" href="#ref4">[4]</a>；本文对失效模式的分析</p>
+          </article>
+
+          <article class="system-card reveal">
+            <div class="system-card-head">
+              <span class="mono-label">L3 / GROUND MODULE</span>
+              <span class="system-role">运输 · 机库 · 补能 · 起降平台</span>
+            </div>
+            <h3>陆行体</h3>
+            <p>三轴六轮、6×6 全轮驱动、后轮转向，800V 增程平台。它既是一辆车，也是飞行体的运输箱、充电站与起降支点；道路安全与航空安全在这里交汇。</p>
+            <dl class="spec-list">
+              <div><dt>驱动</dt><dd>6×6 全轮驱动 / 后轮转向</dd></div>
+              <div><dt>续航</dt><dd>CLTC 综合续航 &gt; 1,000 km</dd></div>
+              <div><dt>补能</dt><dd>满油满电可支持多次飞行</dd></div>
+              <div><dt>安全边界</dt><dd>道路法规 / 航空法规双重约束</dd></div>
+            </dl>
+            <p class="card-source">来源：企业公开资料 <a class="cite" href="#ref4">[4]</a>；公开报道</p>
+          </article>
+
+          <article class="system-card reveal">
+            <div class="system-card-head">
+              <span class="mono-label">L4 / OPERATIONS</span>
+              <span class="system-role">场地 · 空域 · 人员 · 应急</span>
+            </div>
+            <h3>运行体系</h3>
+            <p>营地、空域许可、飞行员、维修、保险、消防与社区沟通。X3-F 的安全不是只由产品决定，而是由“产品 + 场地 + 人 + 规则”共同生产。</p>
+            <dl class="spec-list">
+              <div><dt>场地</dt><dd>净空、人群隔离、消防与救援通道</dd></div>
+              <div><dt>空域</dt><dd>UTM / 空域许可 / 地理围栏</dd></div>
+              <div><dt>人员</dt><dd>飞行员执照 / 机型培训 / 复训</dd></div>
+              <div><dt>应急</dt><dd>迫降、起火、撤离、事故调查</dd></div>
+            </dl>
+            <p class="card-source">来源：CAAC 运行限制 <a class="cite" href="#ref1">[1]</a>；本文对运行体系的分析</p>
+          </article>
+        </div>
+
+        <div class="table-block reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">BOUNDARY CARD / 2026-11</div>
+              <h3>公开运行边界：哪些是规章，哪些还是推断</h3>
+            </div>
+            <span class="table-hint">横向滚动查看 →</span>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table boundary-table">
+              <thead>
+                <tr><th scope="col">维度</th><th scope="col">公开边界</th><th scope="col">性质</th><th scope="col">对安全论证的含义</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">人员</th><td>1 名驾驶员 + 最多 1 名乘客</td><td><span class="badge badge--rule">规章</span></td><td>单飞行员人因与乘员撤离是核心场景。</td></tr>
+                <tr><th scope="row">最大起飞重量</th><td>公开参数 880 kg；专用条件适用范围上限 960 kg</td><td><span class="badge badge--rule">规章</span></td><td>性能与结构余量必须按最不利重量验证。</td></tr>
+                <tr><th scope="row">航时 / 航程</th><td>最大 20 min / 20 km</td><td><span class="badge badge--rule">规章</span></td><td>备降选择少，能量储备策略必须保守。</td></tr>
+                <tr><th scope="row">速度</th><td>不可超越速度 72 km/h</td><td><span class="badge badge--rule">规章</span></td><td>低速度意味着低惯性，但也意味着抗风能力有限。</td></tr>
+                <tr><th scope="row">时间 / 能见</th><td>仅限昼间目视条件飞行</td><td><span class="badge badge--rule">规章</span></td><td>探测与避让责任主要落在飞行员目视。</td></tr>
+                <tr><th scope="row">用途</th><td>私人娱乐飞行 / 飞行培训；不用于商业载客</td><td><span class="badge badge--rule">规章</span></td><td>商业运行所需的更高安全目标不适用，但也不能被营销话术模糊。</td></tr>
+                <tr><th scope="row">场地</th><td>需具备净空、人群隔离、消防与救援条件</td><td><span class="badge badge--rec">本文建议</span></td><td>场地是安全案例的一部分，不是背景条件。</td></tr>
+                <tr><th scope="row">维修</th><td>需按批准的手册与构型控制执行</td><td><span class="badge badge--rec">本文建议</span></td><td>分体架构增加拆装频次，维修差错风险上升。</td></tr>
+                <tr><th scope="row">空域</th><td>需获得空域许可 / UTM 服务 / 地理围栏</td><td><span class="badge badge--rec">本文建议</span></td><td>低空运行依赖外部系统，信息安全与运行安全耦合。</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">“规章”以 CAAC《X3-F 型航空器专用条件征求意见稿》及公开报道为准；“本文建议”不是现行法规要求。公开参数可能随审定进展变化。</p>
+        </div>
+
+        <div class="conops-head reveal">
+          <div class="mono-label">CONOPS / 一次飞行的八个安全关口</div>
+          <h3>危险不只在空中，也在“把飞机拿出来”的过程里</h3>
+        </div>
+        <div class="conops-grid">
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">01</span><span class="mono-label">GROUND</span></div>
+            <h4>公路运输</h4>
+            <p>飞行体折叠、锁定在陆行体后舱；检查重心、锁止与舱门。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H01">H-01 锁止</a><a class="hazard-chip" href="#hz-H12">H-12 维修</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">02</span><span class="mono-label">SITE</span></div>
+            <h4>场地准备</h4>
+            <p>确认净空、风向、人群隔离、消防与应急通道。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H08">H-08 障碍</a><a class="hazard-chip" href="#hz-H09">H-09 风</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">03</span><span class="mono-label">SEPARATE</span></div>
+            <h4>分离</h4>
+            <p>驻车、制动、断开高压、乘员离开、清空运动包络，再执行分离。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H01">H-01 假锁止</a><a class="hazard-chip" href="#hz-H02">H-02 挤压/电弧</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">04</span><span class="mono-label">PRE-FLIGHT</span></div>
+            <h4>起飞前</h4>
+            <p>展开、锁止、自检、能量与重心确认、气象与空域复核。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H05">H-05 电池</a><a class="hazard-chip" href="#hz-H06">H-06 飞控</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">05</span><span class="mono-label">TAKEOFF</span></div>
+            <h4>起飞 / 爬升</h4>
+            <p>差异推力建立姿态，关注障碍物、下洗、阵风与功率余量。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H03">H-03 单电机</a><a class="hazard-chip" href="#hz-H04">H-04 双电机</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">06</span><span class="mono-label">CRUISE</span></div>
+            <h4>巡航 / 机动</h4>
+            <p>昼间目视、空域保持、障碍物规避、能量与返航决策。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H07">H-07 模式</a><a class="hazard-chip" href="#hz-H11">H-11 干扰</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">07</span><span class="mono-label">LANDING</span></div>
+            <h4>进近 / 着陆</h4>
+            <p>确认场地、风、能量储备与复飞路径；避免低空大功率长时间悬停。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H09">H-09 风</a><a class="hazard-chip" href="#hz-H10">H-10 撤离</a></div>
+          </article>
+          <article class="conop-step reveal">
+            <div class="conop-top"><span class="conop-no">08</span><span class="mono-label">DOCK</span></div>
+            <h4>结合 / 补能</h4>
+            <p>断电、对准、锁止、连接、自检；充电前确认电池温度与外观。</p>
+            <div class="hazard-chips"><a class="hazard-chip" href="#hz-H01">H-01 锁止</a><a class="hazard-chip" href="#hz-H05">H-05 热失控</a></div>
+          </article>
+        </div>
+
+        <div class="callout callout--accent reveal">
+          <div class="callout-mark">!</div>
+          <div>
+            <h4>系统边界上的“孤儿风险”</h4>
+            <p>飞行体按航空法规审定，陆行体按道路车辆法规认证，但“分合接口”同时跨越两套体系。若接口的安全责任、验证方法和运行程序没有被明确分配，它就会成为两边都看见、却没人完整负责的孤儿风险。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 METHOD -->
+    <section class="section" id="method" aria-labelledby="method-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">03 / METHOD</div>
+          <h2 id="method-title">不是清单，而是一条可审计的论证链</h2>
+          <p class="section-dek">系统安全工程的价值，不在于把 FMEA、FTA、STPA 各做一遍，而在于让危害、需求、架构、验证与运行证据形成闭环。</p>
+        </div>
+
+        <div class="method-intro">
+          <p class="lede reveal">课程把飞行汽车安全拆成由内而外的五层：被动安全、功能安全、预期功能安全、行为安全、信息安全。外层失效，风险会向內层传递；内层失守，后果会向外层放大。</p>
+          <div class="method-note reveal">
+            <span class="mono-label">READING RULE</span>
+            <p>本报告用“层”组织问题，用“V 模型”组织过程，用“危害—需求—验证”组织证据。三者不是三套目录，而是同一个论证的三种视图。</p>
+          </div>
+        </div>
+
+        <div class="layer-stack">
+          <article class="layer-row layer-row--passive reveal">
+            <div class="layer-index">01</div>
+            <div class="layer-body">
+              <div class="layer-title"><h3>被动安全</h3><span>PASSIVE</span></div>
+              <p class="layer-q">撞了以后，人能不能活下来、逃出去？</p>
+              <p>结构抗坠撞、座椅与约束、舱门/舱盖、应急撤离、电池包防护、火灾抑制。它不防止事故，但决定事故是否致命。</p>
+            </div>
+            <div class="layer-examples">坠撞试验 · 约束系统 · 撤离演示 · 热障</div>
+          </article>
+          <article class="layer-row layer-row--functional reveal">
+            <div class="layer-index">02</div>
+            <div class="layer-body">
+              <div class="layer-title"><h3>功能安全</h3><span>FUNCTIONAL</span></div>
+              <p class="layer-q">坏了以后，系统还能不能保持可控？</p>
+              <p>冗余、监控、互锁、失效隔离、容错控制。核心问题是：单点失效、共模失效、级联失效，是否都被架构接住。</p>
+            </div>
+            <div class="layer-examples">FHA · FTA · FMEA · CCA · 1oo2 / 2oo3</div>
+          </article>
+          <article class="layer-row layer-row--sotif reveal">
+            <div class="layer-index">03</div>
+            <div class="layer-body">
+              <div class="layer-title"><h3>预期功能安全</h3><span>SOTIF</span></div>
+              <p class="layer-q">没坏，但场景超出能力，会不会危险？</p>
+              <p>运行设计域（ODD）、传感器/目视限制、人机接口、自动化边界。很多事故不是“坏了”，而是“系统正常，但场景不在能力范围内”。</p>
+            </div>
+            <div class="layer-examples">ODD · 场景库 · 人因 · HMI · 降级模式</div>
+          </article>
+          <article class="layer-row layer-row--behavior reveal">
+            <div class="layer-index">04</div>
+            <div class="layer-body">
+              <div class="layer-title"><h3>行为安全</h3><span>BEHAVIOR</span></div>
+              <p class="layer-q">人会不会做错？组织会不会放过错误？</p>
+              <p>飞行员训练与复训、维修差错、运行程序、签放、安全文化、监管与事故学习。人不是系统的备份，人也是系统的一部分。</p>
+            </div>
+            <div class="layer-examples">SOP · 训练 · 复训 · 维修防错 · Just Culture</div>
+          </article>
+          <article class="layer-row layer-row--security reveal">
+            <div class="layer-index">05</div>
+            <div class="layer-body">
+              <div class="layer-title"><h3>信息安全</h3><span>SECURITY</span></div>
+              <p class="layer-q">外部能不能让它做错？</p>
+              <p>手机钥匙、OTA、诊断口、GNSS、供应链。对一架由软件定义行为的飞行器，网络攻击可以直接变成飞行安全事件。</p>
+            </div>
+            <div class="layer-examples">TARA · 安全启动 · 签名更新 · 访问控制</div>
+          </article>
+        </div>
+
+        <div class="vmodel-block reveal">
+          <div class="vmodel-head">
+            <div>
+              <div class="mono-label">SAFETY V-MODEL / 0—8</div>
+              <h3>从“场景”走到“运行论证”</h3>
+            </div>
+            <p>点击左侧或右侧的阶段，查看该阶段的输入、输出与公开证据状态。</p>
+          </div>
+          <div class="vmodel-shell">
+            <div class="vmodel-figure">
+              <svg class="vmodel-svg" viewBox="0 0 1000 650" role="img" aria-labelledby="vmodel-title vmodel-desc">
+                <title id="vmodel-title">系统安全工程 V 模型</title>
+                <desc id="vmodel-desc">从整机功能与场景定义开始，经过安全架构、硬件、软件、机械电气化学设计，到安全测试验证与运行安全论证；安全分析方法与安全文化贯穿全过程。</desc>
+                <defs>
+                  <marker id="vArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M0 0 10 5 0 10z" fill="#8a9a98"/>
+                  </marker>
+                </defs>
+                <path d="M120 90 500 470 800 220" fill="none" stroke="#b9ad96" stroke-width="2.5" stroke-dasharray="8 8"/>
+                <path d="M120 90 500 470 800 220" fill="none" stroke="#0e242b" stroke-opacity=".07" stroke-width="28"/>
+                <line x1="90" y1="540" x2="910" y2="540" stroke="#d7d0c0"/>
+                <line x1="90" y1="602" x2="910" y2="602" stroke="#d7d0c0"/>
+                <text x="500" y="560" text-anchor="middle" class="vstage-label">02 / 安全分析方法</text>
+                <text x="500" y="622" text-anchor="middle" class="vstage-label">00 / 安全文化与安全管理</text>
+                <text x="500" y="584" text-anchor="middle" class="vstage-small">HARA · FHA · STPA · FMEA · FTA · CCA · PSSA · SSA</text>
+                <text x="500" y="640" text-anchor="middle" class="vstage-small">SMS · Just Culture · 构型管理 · 变更管理</text>
+
+                <g class="vstage" data-stage="1" tabindex="0" role="button" aria-label="阶段 1：整机功能与场景定义">
+                  <circle cx="120" cy="90" r="30" fill="#0e242b"/>
+                  <text x="120" y="96" text-anchor="middle" class="vstage-no">1</text>
+                  <text x="160" y="84" class="vstage-label">功能与场景</text>
+                  <text x="160" y="102" class="vstage-small">ConOps / ODD</text>
+                </g>
+                <g class="vstage" data-stage="3" tabindex="0" role="button" aria-label="阶段 3：系统安全架构设计">
+                  <circle cx="220" cy="200" r="30" fill="#0e242b"/>
+                  <text x="220" y="206" text-anchor="middle" class="vstage-no">3</text>
+                  <text x="260" y="194" class="vstage-label">安全架构</text>
+                  <text x="260" y="212" class="vstage-small">冗余 / 互锁 / DAL</text>
+                </g>
+                <g class="vstage" data-stage="4" tabindex="0" role="button" aria-label="阶段 4：硬件安全设计">
+                  <circle cx="320" cy="310" r="30" fill="#0e242b"/>
+                  <text x="320" y="316" text-anchor="middle" class="vstage-no">4</text>
+                  <text x="360" y="304" class="vstage-label">硬件安全</text>
+                  <text x="360" y="322" class="vstage-small">传感器 / 电源 / EMI</text>
+                </g>
+                <g class="vstage" data-stage="5" tabindex="0" role="button" aria-label="阶段 5：软件安全设计">
+                  <circle cx="420" cy="400" r="30" fill="#0e242b"/>
+                  <text x="420" y="406" text-anchor="middle" class="vstage-no">5</text>
+                  <text x="460" y="394" class="vstage-label">软件安全</text>
+                  <text x="460" y="412" class="vstage-small">飞控 / 分合 / BMS</text>
+                </g>
+                <g class="vstage" data-stage="6" tabindex="0" role="button" aria-label="阶段 6：机械、电气与化学安全设计">
+                  <circle cx="500" cy="470" r="30" fill="#0e242b"/>
+                  <text x="500" y="476" text-anchor="middle" class="vstage-no">6</text>
+                  <text x="500" y="516" text-anchor="middle" class="vstage-label">机械 / 电气 / 化学</text>
+                  <text x="500" y="534" text-anchor="middle" class="vstage-small">结构 / 电池 / 防火</text>
+                </g>
+                <g class="vstage" data-stage="7" tabindex="0" role="button" aria-label="阶段 7：安全测试验证">
+                  <circle cx="650" cy="360" r="30" fill="#0e242b"/>
+                  <text x="650" y="366" text-anchor="middle" class="vstage-no">7</text>
+                  <text x="690" y="354" class="vstage-label">测试验证</text>
+                  <text x="690" y="372" class="vstage-small">故障注入 / 飞行试验</text>
+                </g>
+                <g class="vstage" data-stage="8" tabindex="0" role="button" aria-label="阶段 8：运行安全论证">
+                  <circle cx="800" cy="220" r="30" fill="#0e242b"/>
+                  <text x="800" y="226" text-anchor="middle" class="vstage-no">8</text>
+                  <text x="840" y="214" class="vstage-label">运行论证</text>
+                  <text x="840" y="232" class="vstage-small">GSN / 运行限制</text>
+                </g>
+
+                <g stroke="#8a9a98" stroke-width="1.5" fill="none" marker-end="url(#vArrow)">
+                  <path d="M150 100 190 170"/>
+                  <path d="M250 220 290 280"/>
+                  <path d="M350 330 390 370"/>
+                  <path d="M450 420 470 440"/>
+                  <path d="M620 350 570 410"/>
+                  <path d="M760 240 720 320"/>
+                </g>
+              </svg>
+            </div>
+            <aside class="vstage-panel" aria-live="polite">
+              <div class="vstage-panel-head">
+                <span class="mono-label" id="stage-no">STAGE 01 / 08</span>
+                <span class="vstage-badge" id="stage-layer">场景层</span>
+              </div>
+              <h4 id="stage-title">整机功能与场景定义</h4>
+              <p class="vstage-question" id="stage-question">它要在哪里、载谁、飞多远？</p>
+              <dl class="vstage-detail">
+                <div><dt>关键输出</dt><dd id="stage-output">ConOps、ODD、功能清单、初步危害</dd></div>
+                <div><dt>公开证据</dt><dd id="stage-evidence">CAAC 专用条件与企业资料给出边界；详细 ODD / 场景目录未公开。</dd></div>
+                <div><dt>主要缺口</dt><dd id="stage-gap">详细 ConOps 与场景库</dd></div>
+              </dl>
+              <p class="vstage-foot">阶段 1 的输入，决定后面所有分析是否在同一个“世界”里。</p>
+            </aside>
+          </div>
+        </div>
+
+        <div class="table-block reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">STANDARDS / APPLICABILITY</div>
+              <h3>标准不是装饰：哪些直接适用，哪些只能参照</h3>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table std-table">
+              <thead>
+                <tr><th scope="col">标准 / 文件</th><th scope="col">作用</th><th scope="col">在本报告中的用法</th><th scope="col">适用方式</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>CAAC X3-F 专用条件</td><td>X3-F 的审定基础</td><td>运行边界、结构/电池/发动机失效要求</td><td><span class="badge badge--rule">直接适用</span></td></tr>
+                <tr><td>CCAR-21-R5</td><td>型号合格审定程序</td><td>TC / PC / AC 的合规路径</td><td><span class="badge badge--rule">直接适用</span></td></tr>
+                <tr><td>SAE ARP4754A</td><td>飞机与系统开发保证</td><td>功能、架构、需求、DAL 的分配逻辑</td><td><span class="badge badge--ref">参照</span></td></tr>
+                <tr><td>SAE ARP4761A</td><td>安全评估指南</td><td>FHA / PSSA / SSA / FTA / FMEA / CMA</td><td><span class="badge badge--ref">参照</span></td></tr>
+                <tr><td>RTCA DO-178C</td><td>机载软件保证</td><td>飞控、分合、BMS、HMI 软件</td><td><span class="badge badge--ref">参照</span></td></tr>
+                <tr><td>RTCA DO-254</td><td>机载硬件保证</td><td>飞控计算机、传感器、执行器接口</td><td><span class="badge badge--ref">参照</span></td></tr>
+                <tr><td>RTCA DO-160G</td><td>机载设备环境试验</td><td>温度、振动、湿热、EMI、雷电</td><td><span class="badge badge--ref">参照</span></td></tr>
+                <tr><td>CCAR-23 / AC 23.1309-1E</td><td>轻型飞机系统安全</td><td>失效状态分类与概率目标的参照</td><td><span class="badge badge--ref">参照</span></td></tr>
+                <tr><td>ISO 26262</td><td>道路车辆功能安全</td><td>陆行体电控/增程/高压系统</td><td><span class="badge badge--ref">方法参照</span></td></tr>
+                <tr><td>ISO 21448</td><td>预期功能安全（SOTIF）</td><td>ODD、场景、性能边界、人机接口</td><td><span class="badge badge--ref">方法参照</span></td></tr>
+                <tr><td>ISO/SAE 21434</td><td>道路车辆网络安全</td><td>TARA、攻击面、更新与访问控制</td><td><span class="badge badge--ref">方法参照</span></td></tr>
+                <tr><td>MIL-STD-882E</td><td>系统安全通用流程</td><td>危害识别、风险矩阵、剩余风险</td><td><span class="badge badge--ref">方法参照</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">公开报道显示，X3-F 的申请类别为轻型运动航空器（LSA），以专用条件作为审定基础 <a class="cite" href="#ref5">[5]</a>；表中“参照”不表示该标准已被局方确定为审定基础。</p>
+        </div>
+
+        <div class="evidence-grid">
+          <article class="evidence-card reveal"><span class="src-grade src-a">A</span><h4>监管 / 标准</h4><p>CAAC 专用条件、CCAR-21、ARP4754A/4761A、DO-178C/254。用于确定边界与方法，不替企业下结论。</p></article>
+          <article class="evidence-card reveal"><span class="src-grade src-b">B</span><h4>企业 / 主流媒体</h4><p>企业官网、TC 受理公告、公开报道。用于确认构型、参数与商业口径，需与规章交叉核对。</p></article>
+          <article class="evidence-card reveal"><span class="src-grade src-c">C</span><h4>行业 / 学术</h4><p>行业报告、论文、课程材料。用于建立方法背景与数量级，不用于单点事实。</p></article>
+          <article class="evidence-card reveal"><span class="src-grade src-d">D</span><h4>本文分析</h4><p>H 编号、风险等级、剩余风险、SR 编号、评分与情景假设。均可复核，但不是官方结论。</p></article>
+        </div>
+
+        <div class="callout callout--dark reveal">
+          <div class="callout-mark">§</div>
+          <div>
+            <h4>三条分析假设</h4>
+            <p>① 公开资料未披露的设计细节，按“未知”处理，不假设其不存在；② 风险矩阵是定性工具，没有公开失效率时不做伪精确的概率计算；③ “安全”指在限定 ODD 内可接受的风险，而不是绝对零风险。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 HAZARDS -->
+    <section class="section section--paper" id="hazards" aria-labelledby="hazards-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">04 / HAZARD &amp; RISK</div>
+          <h2 id="hazards-title">先把坏事想全，再谈冗余</h2>
+          <p class="section-dek">没有公开失效率的条件下，精确概率是伪精确。本报告用定性风险矩阵、失效链与证据缺口，回答三个问题：什么会坏、后果多重、我们还不知道什么。</p>
+        </div>
+
+        <div class="hazard-layout">
+          <div class="risk-panel reveal">
+            <div class="risk-head">
+              <div>
+                <div class="mono-label">HARA / QUALITATIVE MATRIX</div>
+                <h3>12 个危害场景的风险分布</h3>
+              </div>
+              <div class="risk-controls" role="group" aria-label="切换风险视图">
+                <button type="button" class="chip is-active" data-risk-mode="pre" aria-pressed="true">初始风险</button>
+                <button type="button" class="chip" data-risk-mode="post" aria-pressed="false">剩余风险</button>
+              </div>
+            </div>
+            <div class="risk-matrix" role="group" aria-label="5 乘 5 定性风险矩阵，纵轴严重度 A 到 E，横轴可能性 1 到 5，圆点代表 12 个危害场景">
+              <div class="risk-corner"><span>严重度 ↑</span><span>可能性 →</span></div>
+              <div class="risk-colhead">1</div><div class="risk-colhead">2</div><div class="risk-colhead">3</div><div class="risk-colhead">4</div><div class="risk-colhead">5</div>
+
+              <div class="risk-rowlabel"><b>A</b><span>灾难性</span></div>
+              <div class="risk-cell" data-cell="A1"></div><div class="risk-cell" data-cell="A2"></div><div class="risk-cell" data-cell="A3"></div><div class="risk-cell" data-cell="A4"></div><div class="risk-cell" data-cell="A5"></div>
+
+              <div class="risk-rowlabel"><b>B</b><span>危险</span></div>
+              <div class="risk-cell" data-cell="B1"></div><div class="risk-cell" data-cell="B2"></div><div class="risk-cell" data-cell="B3"></div><div class="risk-cell" data-cell="B4"></div><div class="risk-cell" data-cell="B5"></div>
+
+              <div class="risk-rowlabel"><b>C</b><span>主要</span></div>
+              <div class="risk-cell" data-cell="C1"></div><div class="risk-cell" data-cell="C2"></div><div class="risk-cell" data-cell="C3"></div><div class="risk-cell" data-cell="C4"></div><div class="risk-cell" data-cell="C5"></div>
+
+              <div class="risk-rowlabel"><b>D</b><span>次要</span></div>
+              <div class="risk-cell" data-cell="D1"></div><div class="risk-cell" data-cell="D2"></div><div class="risk-cell" data-cell="D3"></div><div class="risk-cell" data-cell="D4"></div><div class="risk-cell" data-cell="D5"></div>
+
+              <div class="risk-rowlabel"><b>E</b><span>可忽略</span></div>
+              <div class="risk-cell" data-cell="E1"></div><div class="risk-cell" data-cell="E2"></div><div class="risk-cell" data-cell="E3"></div><div class="risk-cell" data-cell="E4"></div><div class="risk-cell" data-cell="E5"></div>
+            </div>
+            <div class="risk-legend">
+              <span><i class="legend-swatch legend-swatch--low"></i>低</span>
+              <span><i class="legend-swatch legend-swatch--mid"></i>中</span>
+              <span><i class="legend-swatch legend-swatch--high"></i>高</span>
+              <span><i class="legend-swatch legend-swatch--extreme"></i>极高</span>
+              <span class="risk-legend-note">圆点编号对应下方危害卡；颜色是定性分级，不是概率。</span>
+            </div>
+          </div>
+
+          <aside class="top-risk reveal" aria-labelledby="top-risk-title">
+            <div class="mono-label">TOP 5 / WHY THEY MATTER</div>
+            <h3 id="top-risk-title">最该先回答的五个问题</h3>
+            <ol class="top-risk-list">
+              <li><a href="#hz-H01"><span>01</span><b>分合机构会不会“假锁止”？</b><em>地面 5 分钟，决定空中 20 分钟。</em></a></li>
+              <li><a href="#hz-H05"><span>02</span><b>热失控能不能被限制在包内？</b><em>能量密度和火灾载荷是同一个变量。</em></a></li>
+              <li><a href="#hz-H06"><span>03</span><b>飞控/IMU 共模能不能被隔离？</b><em>六旋翼的冗余，可能被一个共享传感器击穿。</em></a></li>
+              <li><a href="#hz-H07"><span>04</span><b>飞行员会不会误解当前模式？</b><em>最危险的故障，是“他以为自己在另一个模式”。</em></a></li>
+              <li><a href="#hz-H10"><span>05</span><b>坠撞后能不能活着逃出去？</b><em>可生存坠撞，不等于可生存火灾。</em></a></li>
+            </ol>
+            <p class="top-risk-note">排序依据：后果严重度 × 失效链长度 × 公开证据缺口。不是统计概率排序。</p>
+          </aside>
+        </div>
+
+        <div class="filter-bar reveal" role="group" aria-label="按系统筛选危害">
+          <span class="filter-label">FILTER /</span>
+          <button type="button" class="chip is-active" data-hazard-filter="all" aria-pressed="true">全部 12</button>
+          <button type="button" class="chip" data-hazard-filter="interface" aria-pressed="false">接口</button>
+          <button type="button" class="chip" data-hazard-filter="propulsion" aria-pressed="false">推进</button>
+          <button type="button" class="chip" data-hazard-filter="energy" aria-pressed="false">能源</button>
+          <button type="button" class="chip" data-hazard-filter="control" aria-pressed="false">控制</button>
+          <button type="button" class="chip" data-hazard-filter="human" aria-pressed="false">人因</button>
+          <button type="button" class="chip" data-hazard-filter="ops" aria-pressed="false">运行</button>
+          <button type="button" class="chip" data-hazard-filter="passive" aria-pressed="false">被动</button>
+          <button type="button" class="chip" data-hazard-filter="security" aria-pressed="false">信息安全</button>
+          <button type="button" class="chip" data-hazard-filter="behavior" aria-pressed="false">行为</button>
+        </div>
+
+        <div class="hazard-grid" id="hazard-grid">
+          <article class="hazard-card reveal" id="hz-H01" data-id="H01" data-pre="A3" data-post="B1" data-layer="interface" data-title="分合未锁止或“假锁止”">
+            <div class="hazard-top"><span class="hazard-id">H-01</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">接口</span></div>
+            <h3>分合未锁止或“假锁止”</h3>
+            <p>锁舌未完全到位，单路位置传感器却给出“已锁止”。运输中飞行体移位，或带异常构型起飞；后果可能是结构损伤、重心偏移或空中失控。</p>
+            <div class="hazard-chain"><span>锁止未到位</span><i>→</i><span>单路传感误报</span><i>→</i><span>异常构型起飞</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A3 / 高</dd></div>
+              <div><dt>剩余</dt><dd>B1 / 中</dd></div>
+              <div><dt>缺口</dt><dd>双通道确认 / 误锁止注入</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H02" data-id="H02" data-pre="B3" data-post="C1" data-layer="interface" data-title="分合过程中的挤压、跌落与高压电弧">
+            <div class="hazard-top"><span class="hazard-id">H-02</span><span class="sev sev--b">B / 危险</span><span class="hazard-layer">接口 · 电气</span></div>
+            <h3>分离/结合中的挤压、跌落与电弧</h3>
+            <p>人员进入运动包络、未切断高压、单键误触或维修 override 同时出现。后果从手部挤压到高压电弧、飞行体跌落不等。</p>
+            <div class="hazard-chain"><span>人员在包络内</span><i>→</i><span>误启动 / 未断电</span><i>→</i><span>挤压 / 跌落 / 电弧</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>B3 / 高</dd></div>
+              <div><dt>剩余</dt><dd>C1 / 低</dd></div>
+              <div><dt>缺口</dt><dd>互锁逻辑 / 安全区程序</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H03" data-id="H03" data-pre="B3" data-post="B1" data-layer="propulsion" data-title="单电机或单桨失效">
+            <div class="hazard-top"><span class="hazard-id">H-03</span><span class="sev sev--b">B / 危险</span><span class="hazard-layer">推进</span></div>
+            <h3>单电机 / 单桨失效</h3>
+            <p>电机、ESC 或桨叶失效后，剩余五轴需要重新分配推力。若高度、重量、风或功率余量不足，扰动可能演变为非计划接地。</p>
+            <div class="hazard-chain"><span>单轴失效</span><i>→</i><span>推力/力矩不平衡</span><i>→</i><span>控制分配接近饱和</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>B3 / 高</dd></div>
+              <div><dt>剩余</dt><dd>B1 / 中</dd></div>
+              <div><dt>缺口</dt><dd>最大重量/风限下的失效瞬态</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H04" data-id="H04" data-pre="A2" data-post="B1" data-layer="propulsion" data-title="相邻双电机失效或控制分配饱和">
+            <div class="hazard-top"><span class="hazard-id">H-04</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">推进 · 控制</span></div>
+            <h3>相邻双电机失效或控制分配饱和</h3>
+            <p>“单点失效安全”通常只覆盖一个失效。相邻两轴失效，或单轴失效叠加阵风、大重量、低功率余量，可能让可用力矩不足以维持姿态。</p>
+            <div class="hazard-chain"><span>双轴/组合失效</span><i>→</i><span>力矩权限不足</span><i>→</i><span>不可控滚转/偏航</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A2 / 高</dd></div>
+              <div><dt>剩余</dt><dd>B1 / 中</dd></div>
+              <div><dt>缺口</dt><dd>失效组合定义 / 可恢复包线</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H05" data-id="H05" data-pre="A3" data-post="B2" data-layer="energy" data-title="动力电池热失控">
+            <div class="hazard-top"><span class="hazard-id">H-05</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">能源 · 化学</span></div>
+            <h3>动力电池热失控</h3>
+            <p>内短路、过充、低温析锂或机械损伤触发热失控。火焰与有毒烟气可能进入座舱；坠撞后受损电池还可能在撤离窗口内复燃。</p>
+            <div class="hazard-chain"><span>电芯滥用/损伤</span><i>→</i><span>热失控</span><i>→</i><span>扩展 / 有毒烟 / 火灾</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A3 / 极高</dd></div>
+              <div><dt>剩余</dt><dd>B2 / 高</dd></div>
+              <div><dt>缺口</dt><dd>热扩展 / 排气 / 撤离时间</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H06" data-id="H06" data-pre="A2" data-post="A1" data-layer="control" data-title="飞控、IMU 或总线共模失效">
+            <div class="hazard-top"><span class="hazard-id">H-06</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">控制</span></div>
+            <h3>飞控 / IMU / 总线共模失效</h3>
+            <p>六旋翼靠差异转速控制姿态，对姿态感知与控制律高度依赖。共享电源、时钟、总线或传感器漂移，可能让“冗余”同时失效。</p>
+            <div class="hazard-chain"><span>共享资源故障</span><i>→</i><span>错误姿态/控制律</span><i>→</i><span>不可控</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A2 / 高</dd></div>
+              <div><dt>剩余</dt><dd>A1 / 高</dd></div>
+              <div><dt>缺口</dt><dd>独立性 / 比较器 / CMA</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H07" data-id="H07" data-pre="A3" data-post="B1" data-layer="human" data-title="模式混淆与自动化惊讶">
+            <div class="hazard-top"><span class="hazard-id">H-07</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">人因 · SOTIF</span></div>
+            <h3>模式混淆与自动化惊讶</h3>
+            <p>手/自动模式切换、权限边界或告警不清晰，飞行员误判当前状态，输入错误或延迟接管。低高度下，几秒的延迟就足以致命。</p>
+            <div class="hazard-chain"><span>模式不透明</span><i>→</i><span>错误预期</span><i>→</i><span>错误输入 / 延迟接管</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A3 / 极高</dd></div>
+              <div><dt>剩余</dt><dd>B1 / 中</dd></div>
+              <div><dt>缺口</dt><dd>模式逻辑 / 告警层级 / 失配测试</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H08" data-id="H08" data-pre="A3" data-post="B1" data-layer="ops" data-title="低空线缆、障碍物与鸟击">
+            <div class="hazard-top"><span class="hazard-id">H-08</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">运行 · SOTIF</span></div>
+            <h3>低空线缆、障碍物与鸟击</h3>
+            <p>昼间目视把探测责任交给飞行员。逆光、城市背景、细线缆、扬尘和鸟群都会降低发现概率；碰撞或缠绕可能导致失控。</p>
+            <div class="hazard-chain"><span>目视发现不足</span><i>→</i><span>碰撞/缠绕</span><i>→</i><span>失控 / 迫降</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A3 / 极高</dd></div>
+              <div><dt>剩余</dt><dd>B1 / 中</dd></div>
+              <div><dt>缺口</dt><dd>障碍物告警 / 场景验证</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H09" data-id="H09" data-pre="B3" data-post="C2" data-layer="ops" data-title="阵风、下洗与高密度高度">
+            <div class="hazard-top"><span class="hazard-id">H-09</span><span class="sev sev--b">B / 危险</span><span class="hazard-layer">运行 · 性能</span></div>
+            <h3>阵风、下洗与高密度高度</h3>
+            <p>20 分钟/20 公里的性能余量本来就小。阵风、热气流、地面效应、高温或高原会进一步压缩推力余量，导致硬着陆或姿态失控。</p>
+            <div class="hazard-chain"><span>风/温度/高度</span><i>→</i><span>推力余量下降</span><i>→</i><span>硬着陆 / 失控</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>B3 / 高</dd></div>
+              <div><dt>剩余</dt><dd>C2 / 中</dd></div>
+              <div><dt>缺口</dt><dd>风限 / 包线 / 湍流响应</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H10" data-id="H10" data-pre="A3" data-post="B2" data-layer="passive" data-title="坠撞后起火与撤离受阻">
+            <div class="hazard-top"><span class="hazard-id">H-10</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">被动</span></div>
+            <h3>坠撞后起火与撤离受阻</h3>
+            <p>可生存坠撞后，受损电池或高压短路可能起火；舱门变形、乘员受伤、约束卡滞会压缩撤离窗口。火灾与窒息往往比撞击本身更致命。</p>
+            <div class="hazard-chain"><span>可生存坠撞</span><i>→</i><span>电池/高压起火</span><i>→</i><span>撤离失败</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A3 / 极高</dd></div>
+              <div><dt>剩余</dt><dd>B2 / 高</dd></div>
+              <div><dt>缺口</dt><dd>坠撞试验 / 撤离演示 / 救援接口</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H11" data-id="H11" data-pre="B2" data-post="C1" data-layer="security" data-title="GNSS、通信干扰与欺骗">
+            <div class="hazard-top"><span class="hazard-id">H-11</span><span class="sev sev--b">B / 危险</span><span class="hazard-layer">信息安全 · 运行</span></div>
+            <h3>GNSS / 通信干扰与欺骗</h3>
+            <p>低空运行依赖 GNSS、UTM 与通信链路。干扰、欺骗或链路降级可能导致偏航、误入禁区或失去分离保障；飞行员未必能立即识别。</p>
+            <div class="hazard-chain"><span>干扰/欺骗</span><i>→</i><span>导航/链路降级</span><i>→</i><span>偏航 / 误入禁区</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>B2 / 中</dd></div>
+              <div><dt>剩余</dt><dd>C1 / 低</dd></div>
+              <div><dt>缺口</dt><dd>TARA / 多源导航 / 降级模式</dd></div>
+            </dl>
+          </article>
+
+          <article class="hazard-card reveal" id="hz-H12" data-id="H12" data-pre="A2" data-post="B1" data-layer="behavior" data-title="维修差错与构型失控">
+            <div class="hazard-top"><span class="hazard-id">H-12</span><span class="sev sev--a">A / 灾难性</span><span class="hazard-layer">行为</span></div>
+            <h3>维修差错与构型失控</h3>
+            <p>分体架构增加拆装、复装与软件版本管理频次。未按手册、缺少独立签放、非批准件或版本不一致，可能留下飞行前无法发现的隐性失效。</p>
+            <div class="hazard-chain"><span>维修差错</span><i>→</i><span>隐性失效/版本错配</span><i>→</i><span>空中失效</span></div>
+            <dl class="hazard-meta">
+              <div><dt>初始</dt><dd>A2 / 高</dd></div>
+              <div><dt>剩余</dt><dd>B1 / 中</dd></div>
+              <div><dt>缺口</dt><dd>构型管理 / 独立签放 / 防错</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <p class="section-footnote reveal">风险等级说明：A = 灾难性（多人死亡/机毁），B = 危险（重伤/严重损伤），C = 主要（轻伤/紧急处置），D = 次要，E = 可忽略。可能性 1 = 极不可能，5 = 频繁。初始/剩余风险均为本文定性判断。</p>
+      </div>
+    </section>
+
+    <!-- 05 DOCKING -->
+    <section class="section section--dark" id="docking" aria-labelledby="docking-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">05 / DOCKING INTERFACE</div>
+          <h2 id="docking-title">分合机构：把“车”和“飞机”接在一起的那几分钟</h2>
+          <p class="section-dek">这是 X3-F 最独特、也最容易被传统适航经验漏掉的系统。它不是附件，而是飞行前提：锁没锁好，决定能不能起飞。</p>
+        </div>
+
+        <div class="dark-lede reveal">
+          <p class="lede">传统飞机的“起飞前检查”围绕舵面、油量、发动机和重心展开；X3-F 还多了一套跨介质接口：机械锁、电气连接、数据握手、热管理连接，以及一套把飞行体从“货物”变成“航空器”的构型转换。</p>
+          <div class="dark-stat"><b>2–5</b><span>分钟 / 企业公开口径的分离或结合时间，不同报道存在差异</span></div>
+        </div>
+
+        <div class="stpa-block reveal">
+          <div class="stpa-head">
+            <div>
+              <div class="mono-label">STPA / CONTROL STRUCTURE</div>
+              <h3>谁在控制什么？反馈从哪里来？</h3>
+            </div>
+            <p>STPA 不先问“哪个零件会坏”，而先问“控制动作在什么情境下会不安全”。分合机构的风险，很多来自控制逻辑与反馈缺失，而不是零件本身。</p>
+          </div>
+          <div class="stpa-figure">
+            <svg class="stpa-svg" viewBox="0 0 1000 620" role="img" aria-labelledby="stpa-title stpa-desc">
+              <title id="stpa-title">分合机构 STPA 控制结构图</title>
+              <desc id="stpa-desc">飞行员向分合控制单元发出命令，控制单元驱动锁止执行器；位置传感器反馈状态，FCC 提供起飞抑制，BMS 提供高压互锁，维修 override 可介入。</desc>
+              <defs>
+                <marker id="stpaArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                  <path d="M0 0 10 5 0 10z" fill="#9fb4b2"/>
+                </marker>
+              </defs>
+              <rect x="30" y="30" width="940" height="550" rx="12" fill="none" stroke="#f3efe6" stroke-opacity=".16" stroke-dasharray="7 8"/>
+              <text x="52" y="58" class="svg-mono">SYSTEM BOUNDARY / DOCKING &amp; CONFIGURATION</text>
+
+              <g class="stpa-box" transform="translate(60,90)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">CONTROLLER / HUMAN</text>
+                <text x="16" y="52" class="svg-label">飞行员 / 操作者</text>
+                <text x="16" y="70" class="svg-small">分离 · 结合 · 中止</text>
+              </g>
+              <g class="stpa-box" transform="translate(395,90)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">CONTROLLER / LOGIC</text>
+                <text x="16" y="52" class="svg-label">分合控制单元 DCU</text>
+                <text x="16" y="70" class="svg-small">时序 · 锁止 · 自检</text>
+              </g>
+              <g class="stpa-box" transform="translate(730,90)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">ACTUATOR</text>
+                <text x="16" y="52" class="svg-label">主锁 + 副锁</text>
+                <text x="16" y="70" class="svg-small">机械锁止 / 防意外释放</text>
+              </g>
+
+              <g class="stpa-box" transform="translate(60,270)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">SAFETY / INHIBIT</text>
+                <text x="16" y="52" class="svg-label">FCC 起飞抑制</text>
+                <text x="16" y="70" class="svg-small">构型未确认则禁止起飞</text>
+              </g>
+              <g class="stpa-box stpa-box--warn" transform="translate(395,270)">
+                <rect width="210" height="70" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">OVERRIDE / RISK</text>
+                <text x="16" y="52" class="svg-label">维修 override</text>
+              </g>
+              <g class="stpa-box" transform="translate(730,270)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">SENSOR / FEEDBACK</text>
+                <text x="16" y="52" class="svg-label">位置传感 2oo3</text>
+                <text x="16" y="70" class="svg-small">主锁 / 副锁 / 到位</text>
+              </g>
+
+              <g class="stpa-box" transform="translate(60,450)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">ENERGY / INTERLOCK</text>
+                <text x="16" y="52" class="svg-label">BMS / 高压互锁</text>
+                <text x="16" y="70" class="svg-small">断电 · 预充 · 绝缘</text>
+              </g>
+              <g class="stpa-box" transform="translate(395,450)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">CONTROLLED PROCESS</text>
+                <text x="16" y="52" class="svg-label">飞行体 + 陆行体接口</text>
+                <text x="16" y="70" class="svg-small">机械 / 电气 / 数据 / 热</text>
+              </g>
+              <g class="stpa-box" transform="translate(730,450)">
+                <rect width="210" height="80" rx="3"/>
+                <text x="16" y="28" class="svg-kicker">CONTEXT</text>
+                <text x="16" y="52" class="svg-label">驻车 / 制动 / 乘员</text>
+                <text x="16" y="70" class="svg-small">天气 · 地面 · 运动包络</text>
+              </g>
+
+              <g class="stpa-arrows" stroke="#9fb4b2" stroke-width="1.6" fill="none" marker-end="url(#stpaArrow)">
+                <path d="M270 130H390"/>
+                <path d="M605 130H725"/>
+                <path d="M835 170V265"/>
+                <path d="M730 310H650V180H610"/>
+                <path d="M270 310H390"/>
+                <path d="M500 270V175"/>
+                <path d="M270 490H390"/>
+                <path d="M605 490H690V350H725"/>
+                <path d="M730 490H650V530H610"/>
+              </g>
+              <g class="stpa-arrowlabels">
+                <text x="300" y="120">命令</text>
+                <text x="625" y="120">锁 / 解锁</text>
+                <text x="845" y="220">位置</text>
+                <text x="665" y="200">状态反馈</text>
+                <text x="300" y="300">禁止起飞</text>
+                <text x="510" y="225">override</text>
+                <text x="300" y="480">HV 状态</text>
+                <text x="615" y="430">实际构型</text>
+              </g>
+              <g class="stpa-uca">
+                <text x="300" y="150">UCA-1 运动中分离</text>
+                <text x="625" y="150">UCA-2 未对准先解锁</text>
+                <text x="720" y="345" text-anchor="end">UCA-3 单传感器报锁止</text>
+                <text x="300" y="330">UCA-4 未确认即放行</text>
+                <text x="510" y="250">UCA-5 无复核 override</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="table-block table-block--dark reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">UNSAFE CONTROL ACTIONS</div>
+              <h3>六种“动作本身没错，情境错了”</h3>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table data-table--dark uca-table">
+              <thead><tr><th scope="col">编号</th><th scope="col">不安全控制动作</th><th scope="col">危险情境</th><th scope="col">可能后果</th></tr></thead>
+              <tbody>
+                <tr><td>UCA-1</td><td>飞行员在陆行体未驻车/未制动时命令分离</td><td>车辆仍有速度、坡度或乘员未离开</td><td>飞行体跌落、碰撞、人员伤害</td></tr>
+                <tr><td>UCA-2</td><td>DCU 在未对准或存在异物时命令解锁/锁止</td><td>锁舌与锁扣未对中、沙尘/冰雪卡滞</td><td>结构损伤、假锁止、无法分离</td></tr>
+                <tr><td>UCA-3</td><td>DCU 在仅一个锁到位时报告“已锁止”</td><td>单路传感器故障、线束磨损、软件状态机错误</td><td>带异常构型运输/起飞，空中结构异常</td></tr>
+                <tr><td>UCA-4</td><td>FCC 在构型未确认时允许起飞</td><td>自检被跳过、传感器漂移、维护后未复位</td><td>折叠臂/锁止未到位，失控或结构失效</td></tr>
+                <tr><td>UCA-5</td><td>维修人员在无第二人复核时使用 override</td><td>排故压力、缺少记录、单人作业</td><td>互锁被绕过，后续运行带隐性失效</td></tr>
+                <tr><td>UCA-6</td><td>乘员在自动结合过程中留在飞行体内</td><td>程序不清晰、时间压力、误以为“已完成”</td><td>挤压、跌落、无法快速撤离</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="defense-grid">
+          <article class="defense-card reveal"><span>01</span><h4>机械：主锁 + 副锁</h4><p>至少两道独立锁止，任何一道失效都不应导致意外释放；锁止结构需考虑磨损、腐蚀、振动与误操作。</p></article>
+          <article class="defense-card reveal"><span>02</span><h4>感知：2oo3 位置确认</h4><p>不要用一只微动开关代表“锁好”。主锁、副锁、到位各用独立传感，表决后再给出“构型确认”。</p></article>
+          <article class="defense-card reveal"><span>03</span><h4>电气：高压互锁</h4><p>分离/结合前强制断开高压，连接器带 HVIL；预充、绝缘监测、接地与电弧防护要在时序里。</p></article>
+          <article class="defense-card reveal"><span>04</span><h4>软件：起飞抑制</h4><p>构型未确认、传感器不一致、维护 override 未复位时，FCC 必须禁止起飞，而不是只亮黄灯。</p></article>
+          <article class="defense-card reveal"><span>05</span><h4>程序：安全区与双人确认</h4><p>驻车、制动、乘员离开、运动包络清空、双人确认；把“快”建立在“不会漏”的程序上。</p></article>
+          <article class="defense-card reveal"><span>06</span><h4>维修：防错与记录</h4><p>override 需第二人授权、自动记录、复位验证；关键件循环计数、腐蚀检查、 proof test 纳入定检。</p></article>
+        </div>
+
+        <div class="callout callout--warn reveal">
+          <div class="callout-mark">CCA</div>
+          <div>
+            <h4>共因分析：五个“看起来冗余、其实共享”的路径</h4>
+            <p>① 主/副锁共用一套电源或控制器；② 多路位置传感器共用同一根线束/连接器；③ 分合与飞控共用软件平台或时钟；④ 水、尘、盐雾导致多路同时失效；⑤ 维修 override 成为“合法绕过”。任一 shared path 存在，2oo3 就可能退化成 1oo1。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 06 FLIGHT -->
+    <section class="section" id="flight" aria-labelledby="flight-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">06 / FLIGHT &amp; ENERGY</div>
+          <h2 id="flight-title">六旋翼的冗余，能兜住哪些失效？</h2>
+          <p class="section-dek">“单点失效安全”是一句有条件的话。它至少要求：失效后仍有足够的推力/力矩余量、飞控能重新分配、飞行员能识别并控制。</p>
+        </div>
+
+        <div class="arch-block reveal">
+          <div class="arch-head">
+            <div>
+              <div class="mono-label">PROPULSION / CONTROL SCHEMATIC</div>
+              <h3>六条推力通道，两个隐藏的“共享点”</h3>
+            </div>
+            <p>示意图只表达功能关系，不代表实际电池包、控制器或总线数量。真正的安全论证需要公开架构与独立性证据。</p>
+          </div>
+          <div class="arch-figure">
+            <svg class="arch-svg" viewBox="0 0 1000 560" role="img" aria-labelledby="arch-title arch-desc">
+              <title id="arch-title">X3-F 推进与控制架构示意</title>
+              <desc id="arch-desc">电池包 A/B 经 BMS 向双飞控通道供电，飞控向六个 ESC 发出指令，驱动六个电机与定距桨；红色虚线标出电池与飞控的潜在共模路径。</desc>
+              <defs>
+                <marker id="archArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                  <path d="M0 0 10 5 0 10z" fill="#6d7e7f"/>
+                </marker>
+              </defs>
+              <rect width="1000" height="560" fill="none"/>
+              <g class="arch-box" transform="translate(40,150)">
+                <rect width="170" height="90" rx="3"/>
+                <text x="14" y="26" class="svg-kicker">ENERGY / A</text>
+                <text x="14" y="50" class="svg-label">电池包 A</text>
+                <text x="14" y="70" class="svg-small">电芯 / 模组 / 热管理</text>
+              </g>
+              <g class="arch-box" transform="translate(40,330)">
+                <rect width="170" height="90" rx="3"/>
+                <text x="14" y="26" class="svg-kicker">ENERGY / B</text>
+                <text x="14" y="50" class="svg-label">电池包 B</text>
+                <text x="14" y="70" class="svg-small">能量 / 功率 / 冗余</text>
+              </g>
+              <g class="arch-box arch-box--warn" transform="translate(260,240)">
+                <rect width="150" height="100" rx="3"/>
+                <text x="14" y="26" class="svg-kicker">SHARED / WATCH</text>
+                <text x="14" y="50" class="svg-label">BMS</text>
+                <text x="14" y="70" class="svg-small">电压 / 温度 / 接触器</text>
+              </g>
+              <g class="arch-box" transform="translate(460,150)">
+                <rect width="160" height="90" rx="3"/>
+                <text x="14" y="26" class="svg-kicker">CONTROL / A</text>
+                <text x="14" y="50" class="svg-label">FCC 通道 A</text>
+                <text x="14" y="70" class="svg-small">控制律 / 监控</text>
+              </g>
+              <g class="arch-box" transform="translate(460,330)">
+                <rect width="160" height="90" rx="3"/>
+                <text x="14" y="26" class="svg-kicker">CONTROL / B</text>
+                <text x="14" y="50" class="svg-label">FCC 通道 B</text>
+                <text x="14" y="70" class="svg-small">独立电源 / 时钟？</text>
+              </g>
+              <g class="arch-box" transform="translate(680,80)">
+                <rect width="120" height="50" rx="3"/><text x="12" y="22" class="svg-small">ESC 1</text><text x="12" y="40" class="svg-small">M1 / P1</text>
+              </g>
+              <g class="arch-box" transform="translate(680,155)">
+                <rect width="120" height="50" rx="3"/><text x="12" y="22" class="svg-small">ESC 2</text><text x="12" y="40" class="svg-small">M2 / P2</text>
+              </g>
+              <g class="arch-box" transform="translate(680,230)">
+                <rect width="120" height="50" rx="3"/><text x="12" y="22" class="svg-small">ESC 3</text><text x="12" y="40" class="svg-small">M3 / P3</text>
+              </g>
+              <g class="arch-box" transform="translate(680,330)">
+                <rect width="120" height="50" rx="3"/><text x="12" y="22" class="svg-small">ESC 4</text><text x="12" y="40" class="svg-small">M4 / P4</text>
+              </g>
+              <g class="arch-box" transform="translate(680,405)">
+                <rect width="120" height="50" rx="3"/><text x="12" y="22" class="svg-small">ESC 5</text><text x="12" y="40" class="svg-small">M5 / P5</text>
+              </g>
+              <g class="arch-box" transform="translate(680,480)">
+                <rect width="120" height="50" rx="3"/><text x="12" y="22" class="svg-small">ESC 6</text><text x="12" y="40" class="svg-small">M6 / P6</text>
+              </g>
+              <g class="arch-rotor">
+                <circle cx="890" cy="105" r="26"/><path d="M890 105V80M890 105l22 13M890 105l-22 13" stroke-width="5"/>
+                <circle cx="890" cy="180" r="26"/><path d="M890 180V155M890 180l22 13M890 180l-22 13" stroke-width="5"/>
+                <circle cx="890" cy="255" r="26"/><path d="M890 255V230M890 255l22 13M890 255l-22 13" stroke-width="5"/>
+                <circle cx="890" cy="355" r="26"/><path d="M890 355V330M890 355l22 13M890 355l-22 13" stroke-width="5"/>
+                <circle cx="890" cy="430" r="26"/><path d="M890 430V405M890 430l22 13M890 430l-22 13" stroke-width="5"/>
+                <circle cx="890" cy="505" r="26"/><path d="M890 505V480M890 505l22 13M890 505l-22 13" stroke-width="5"/>
+              </g>
+              <g stroke="#6d7e7f" stroke-width="1.5" fill="none" marker-end="url(#archArrow)">
+                <path d="M210 195H255V270"/>
+                <path d="M210 375H255V310"/>
+                <path d="M410 290H455V195"/>
+                <path d="M410 290H455V375"/>
+                <path d="M620 190H650V105H675"/>
+                <path d="M620 190H650V180H675"/>
+                <path d="M620 190H650V255H675"/>
+                <path d="M620 380H650V355H675"/>
+                <path d="M620 380H650V430H675"/>
+                <path d="M620 380H650V505H675"/>
+              </g>
+              <g stroke="#6d7e7f" stroke-width="1.5" fill="none" marker-end="url(#archArrow)">
+                <path d="M800 105H855"/><path d="M800 180H855"/><path d="M800 255H855"/>
+                <path d="M800 355H855"/><path d="M800 430H855"/><path d="M800 505H855"/>
+              </g>
+              <path d="M245 225C245 140 520 110 620 355" fill="none" stroke="#e0522b" stroke-width="1.5" stroke-dasharray="6 6" opacity=".8"/>
+              <text x="270" y="120" class="svg-mono svg-mono--accent">POTENTIAL COMMON-MODE PATH / 示意</text>
+              <text x="700" y="45" class="svg-mono">DIFFERENTIAL THRUST / ATTITUDE</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="fta-block reveal">
+          <div class="fta-head">
+            <div>
+              <div class="mono-label">FTA / QUALITATIVE</div>
+              <h3>顶事件：非计划接地 / 失去可控飞行</h3>
+            </div>
+            <div class="fta-controls" role="group" aria-label="选择关键割集或失效路径进行高亮">
+              <span>点击右侧割集，高亮对应路径</span>
+            </div>
+          </div>
+          <div class="fta-shell">
+            <div class="fta-figure">
+              <svg class="fta-svg" viewBox="0 0 1200 720" role="img" aria-labelledby="fta-title fta-desc">
+                <title id="fta-title">非计划接地故障树</title>
+                <desc id="fta-desc">顶事件由升力不足、姿态控制失效、能源失效、结构失效和运行人因五个分支通过或门连接；每个分支下是关键失效路径，斜杠表示同一分支中的独立单点事件。</desc>
+                <defs>
+                  <marker id="ftaArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M0 0 10 5 0 10z" fill="#8a9a98"/>
+                  </marker>
+                </defs>
+                <g class="fta-node fta-node--top" data-cuts="C1 C2 C3 C4 C5 C6 C7" transform="translate(450,25)">
+                  <rect width="300" height="58" rx="3"/><text x="150" y="25" text-anchor="middle">非计划接地 / 失去可控飞行</text><text x="150" y="45" text-anchor="middle">TOP EVENT</text>
+                </g>
+                <g class="fta-gate" transform="translate(550,115)">
+                  <path d="M0 0H100V45H0Z"/><text x="50" y="29" text-anchor="middle">OR</text>
+                </g>
+                <path d="M600 83V115M600 160V190M600 190H120M600 190H360M600 190H840M600 190H1080" stroke="#8a9a98" stroke-width="1.5"/>
+                <path d="M120 190V215M360 190V215M600 190V215M840 190V215M1080 190V215" stroke="#8a9a98" stroke-width="1.5"/>
+
+                <g class="fta-gate" data-cuts="C1" transform="translate(35,215)"><path d="M0 0H170V50H0Z"/><text x="85" y="22" text-anchor="middle">AND</text><text x="85" y="40" text-anchor="middle">升力 / 推力不足</text></g>
+                <g class="fta-gate" data-cuts="C2" transform="translate(275,215)"><path d="M0 0H170V50H0Z"/><text x="85" y="22" text-anchor="middle">OR</text><text x="85" y="40" text-anchor="middle">姿态控制失效</text></g>
+                <g class="fta-gate" data-cuts="C3" transform="translate(515,215)"><path d="M0 0H170V50H0Z"/><text x="85" y="22" text-anchor="middle">OR</text><text x="85" y="40" text-anchor="middle">能源失效</text></g>
+                <g class="fta-gate" data-cuts="C4" transform="translate(755,215)"><path d="M0 0H170V50H0Z"/><text x="85" y="22" text-anchor="middle">OR</text><text x="85" y="40" text-anchor="middle">结构失效</text></g>
+                <g class="fta-gate" data-cuts="C5 C6 C7" transform="translate(995,215)"><path d="M0 0H170V50H0Z"/><text x="85" y="22" text-anchor="middle">OR</text><text x="85" y="40" text-anchor="middle">运行 / 人因</text></g>
+
+                <g class="fta-leaves">
+                  <g class="fta-node" data-cuts="C1" transform="translate(20,330)"><rect width="200" height="58" rx="2"/><text x="10" y="24">单电机 / 桨失效</text><text x="10" y="44">M1 / P1</text></g>
+                  <g class="fta-node" data-cuts="C1" transform="translate(20,430)"><rect width="200" height="58" rx="2"/><text x="10" y="24">控制余量不足</text><text x="10" y="44">重量 / 风 / 高度</text></g>
+                  <g class="fta-node" data-cuts="C2" transform="translate(260,330)"><rect width="200" height="58" rx="2"/><text x="10" y="24">FCC 共模</text><text x="10" y="44">电源 / 时钟 / 总线</text></g>
+                  <g class="fta-node" data-cuts="C2" transform="translate(260,430)"><rect width="200" height="58" rx="2"/><text x="10" y="24">IMU / 总线共模</text><text x="10" y="44">姿态感知错误</text></g>
+                  <g class="fta-node" data-cuts="C2" transform="translate(260,530)"><rect width="200" height="58" rx="2"/><text x="10" y="24">控制律错误</text><text x="10" y="44">软件 / 需求缺陷</text></g>
+                  <g class="fta-node" data-cuts="C3" transform="translate(500,330)"><rect width="200" height="58" rx="2"/><text x="10" y="24">热失控</text><text x="10" y="44">电芯 / 机械损伤</text></g>
+                  <g class="fta-node" data-cuts="C3" transform="translate(500,430)"><rect width="200" height="58" rx="2"/><text x="10" y="24">接触器误断</text><text x="10" y="44">高压丢失</text></g>
+                  <g class="fta-node" data-cuts="C3" transform="translate(500,530)"><rect width="200" height="58" rx="2"/><text x="10" y="24">电量耗尽</text><text x="10" y="44">无合适迫降点</text></g>
+                  <g class="fta-node" data-cuts="C4" transform="translate(740,330)"><rect width="200" height="58" rx="2"/><text x="10" y="24">折叠臂疲劳</text><text x="10" y="44">复合材料 / 振动</text></g>
+                  <g class="fta-node" data-cuts="C4" transform="translate(740,430)"><rect width="200" height="58" rx="2"/><text x="10" y="24">接头腐蚀</text><text x="10" y="44">盐雾 / 水 / 维护</text></g>
+                  <g class="fta-node" data-cuts="C4" transform="translate(740,530)"><rect width="200" height="58" rx="2"/><text x="10" y="24">着陆超限</text><text x="10" y="44">硬着陆 / 侧载</text></g>
+                  <g class="fta-node" data-cuts="C5" transform="translate(980,330)"><rect width="200" height="58" rx="2"/><text x="10" y="24">模式混淆</text><text x="10" y="44">低高度 / 延迟接管</text></g>
+                  <g class="fta-node" data-cuts="C6" transform="translate(980,430)"><rect width="200" height="58" rx="2"/><text x="10" y="24">线缆 / 障碍</text><text x="10" y="44">目视发现不足</text></g>
+                  <g class="fta-node" data-cuts="C7" transform="translate(980,530)"><rect width="200" height="58" rx="2"/><text x="10" y="24">阵风 / 下洗</text><text x="10" y="44">能量/推力余量不足</text></g>
+                </g>
+
+                <g stroke="#8a9a98" stroke-width="1.3" fill="none">
+                  <path d="M120 265V330M120 265V430"/>
+                  <path d="M360 265V330M360 265V430M360 265V530"/>
+                  <path d="M600 265V330M600 265V430M600 265V530"/>
+                  <path d="M840 265V330M840 265V430M840 265V530"/>
+                  <path d="M1080 265V330M1080 265V430M1080 265V530"/>
+                </g>
+                <text x="20" y="625" class="svg-small">图例：矩形 = 事件/失效；AND = 同时发生；OR = 任一发生。定性割集，不含概率。</text>
+              </svg>
+            </div>
+
+            <div class="cutset-panel">
+              <div class="mono-label">MINIMAL CUT SETS / 07</div>
+              <h4>关键割集 / 路径</h4>
+              <div class="cutset-list">
+                <button type="button" class="cutset" data-cutset="C1"><b>C1</b><span>单电机/桨失效 + 控制余量不足</span></button>
+                <button type="button" class="cutset" data-cutset="C2"><b>C2</b><span>FCC/IMU/总线共模 + 控制律错误</span></button>
+                <button type="button" class="cutset" data-cutset="C3"><b>C3</b><span>热失控 / 接触器误断 / 电量耗尽</span></button>
+                <button type="button" class="cutset" data-cutset="C4"><b>C4</b><span>折叠臂疲劳 / 接头腐蚀 / 着陆超限</span></button>
+                <button type="button" class="cutset" data-cutset="C5"><b>C5</b><span>模式混淆 + 低高度</span></button>
+                <button type="button" class="cutset" data-cutset="C6"><b>C6</b><span>线缆/障碍 + 目视发现不足</span></button>
+                <button type="button" class="cutset" data-cutset="C7"><b>C7</b><span>阵风/下洗 + 能量/推力余量不足</span></button>
+              </div>
+              <p class="table-note">割集回答“哪些失效组合足以让顶事件发生”。C1/C2/C5/C6/C7 是组合割集；C3/C4 是割集族，斜杠分隔的每个事件都可单独构成单点割集。C2/C3 的共模/单点性质优先级高于“单电机失效”。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-block reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">FMEA / TOP ITEMS</div>
+              <h3>八个必须先拿到证据的失效模式</h3>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table fmea-table">
+              <thead><tr><th scope="col">项目</th><th scope="col">失效模式</th><th scope="col">局部影响</th><th scope="col">检测 / 监控</th><th scope="col">严重度</th><th scope="col">关键措施</th></tr></thead>
+              <tbody>
+                <tr><td>电机</td><td>绕组短路 / 退磁</td><td>推力损失、局部过热</td><td>电流、温度、转速</td><td><span class="sev sev--b">B</span></td><td>隔离、防火、失效瞬态验证</td></tr>
+                <tr><td>ESC</td><td>功率管击穿</td><td>电机停转 / 反向</td><td>转速反馈、母线电流</td><td><span class="sev sev--b">B</span></td><td>熔断、冗余控制、故障注入</td></tr>
+                <tr><td>桨叶</td><td>裂纹 / 断裂</td><td>振动、推力损失</td><td>目视、振动、寿命计数</td><td><span class="sev sev--b">B</span></td><td>探伤、寿命、包容性</td></tr>
+                <tr><td>电芯</td><td>内短路</td><td>热失控、起火</td><td>电压/温度、气体</td><td><span class="sev sev--a">A</span></td><td>热障、排气、隔离、灭火</td></tr>
+                <tr><td>接触器</td><td>粘连 / 误断</td><td>无法切断高压 / 空中失电</td><td>自检、预充、状态反馈</td><td><span class="sev sev--a">A</span></td><td>双触点、预充、失效安全</td></tr>
+                <tr><td>IMU</td><td>漂移 / 卡滞</td><td>错误姿态</td><td>比较器、交叉检查</td><td><span class="sev sev--a">A</span></td><td>独立余度、监控、降级</td></tr>
+                <tr><td>FCC</td><td>共模 / 控制律错误</td><td>错误指令</td><td>独立监控、看门狗</td><td><span class="sev sev--a">A</span></td><td>独立性、DO-178C、形式化</td></tr>
+                <tr><td>分合传感</td><td>假锁止</td><td>异常构型起飞</td><td>2oo3、一致性检查</td><td><span class="sev sev--a">A</span></td><td>起飞抑制、双通道确认</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">FMEA 的严重度是“局部失效对上层危害的贡献”，不是单独给零件评级。表格用于指出证据优先级，不替代完整 FMEA。</p>
+        </div>
+
+        <div class="battery-block reveal">
+          <div class="battery-head">
+            <div>
+              <div class="mono-label">THERMAL RUNAWAY / BARRIERS</div>
+              <h3>电池安全：把“起火”限制在可撤离的时间窗内</h3>
+            </div>
+            <p>20 分钟的航时意味着高功率起降、频繁深充放与有限的热缓冲。电池安全不能只靠 BMS 报警，而要靠“电芯—模组—包—座舱—撤离”五级防线。</p>
+          </div>
+          <div class="battery-chain">
+            <div class="chain-step"><span>01</span><b>触发</b><p>内短路 / 过充 / 低温析锂 / 机械损伤</p></div>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <div class="chain-step"><span>02</span><b>热失控</b><p>电芯温度骤升，喷阀、冒烟、起火</p></div>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <div class="chain-step"><span>03</span><b>扩展</b><p>热量向相邻电芯/模组传递</p></div>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <div class="chain-step"><span>04</span><b>座舱</b><p>有毒烟气、火焰、能见度下降</p></div>
+            <div class="chain-arrow" aria-hidden="true">→</div>
+            <div class="chain-step"><span>05</span><b>撤离</b><p>约束、舱门、烧伤、救援时间</p></div>
+          </div>
+          <div class="barrier-list">
+            <span>电芯筛选</span><span>BMS 三级保护</span><span>热障 / 泄压</span><span>包内隔离</span><span>座舱密封</span><span>应急撤离</span><span>地面消防</span>
+          </div>
+          <div class="callout callout--warn">
+            <div class="callout-mark">20′</div>
+            <div><h4>航时越短，能量决策越要保守</h4><p>最大航时不是常规任务时间。逆风、低温、电池老化、悬停和复飞都会吃掉余量。安全论证需要一条“返航/备降能量政策”，而不是只写一个 20 分钟。</p></div>
+          </div>
+        </div>
+
+        <div class="callout callout--warn reveal">
+          <div class="callout-mark">!</div>
+          <div>
+            <h4>没有自转下滑：多旋翼的“最后一张牌”不同</h4>
+            <p>X3-F 采用六个定距桨，从构型上看不具备直升机式自转下滑能力。直升机可以把发动机失效转化为自转下滑与可控迫降；多旋翼一旦失去足够推力，主要选择是受控下降/迫降，而不是滑翔。这意味着“单点失效后仍有五轴”必须配合足够的推力余量、低空逃逸策略与场地选择，才构成完整的安全论证。</p>
+          </div>
+        </div>
+
+        <div class="claim-box reveal">
+          <div class="mono-label">WHAT “SINGLE-POINT FAILURE SAFE” DOES NOT MEAN</div>
+          <h3>“单点失效安全”至少没有保证三件事</h3>
+          <div class="claim-grid">
+            <div><span>01</span><p><b>不保证双失效。</b>相邻双电机、单电机+阵风、单电机+大重量，都可能越过控制权限。</p></div>
+            <div><span>02</span><p><b>不保证共模。</b>共享电源、时钟、总线、传感器、软件平台，会让“冗余”同时失效。</p></div>
+            <div><span>03</span><p><b>不保证人因。</b>失效后的瞬态、告警、操纵提示，如果飞行员接不住，架构冗余不会自动变成安全。</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 HUMAN -->
+    <section class="section section--paper" id="human" aria-labelledby="human-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">07 / SOTIF &amp; HUMAN FACTORS</div>
+          <h2 id="human-title">最难冗余的，是人</h2>
+          <p class="section-dek">X3-F 把飞行门槛降到了“5 分钟上手”的叙事，但安全论证需要证明的不是上手速度，而是在告警、误解、惊吓和压力下，人仍能做对。</p>
+        </div>
+
+        <div class="odd-grid">
+          <article class="odd-card reveal"><span class="odd-status odd-status--rule">规章</span><h4>时间 / 光照</h4><p>仅昼间目视。日出后、日落前的具体窗口需在手册中定义。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--gap">待确认</span><h4>能见度 / 云底高</h4><p>VFR 最低条件只是下限；低空场景还需考虑眩光、逆光与背景融合。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--gap">待确认</span><h4>风 / 湍流</h4><p>地面风、阵风、下洗与热气流限制，需要与最大重量/功率余量一起给出。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--gap">待确认</span><h4>降水 / 扬尘</h4><p>雨、雪、雾、沙尘会同时降低目视与推力/传感器性能。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--rule">规章</span><h4>空域 / 高度</h4><p>需空域许可、UTM 服务与地理围栏；不得误入禁区。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--rec">建议</span><h4>场地 / 人群</h4><p>净空、人群隔离、消防、救援通道；起降区不应与观众混在一起。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--rec">建议</span><h4>障碍物 / 线缆</h4><p>低空线缆是“看得见但容易被忽略”的杀手；需要航路规划与目视程序。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--rule">规章</span><h4>人员 / 执照</h4><p>驾驶员资质、机型培训、近期经历；乘客需简要应急说明。</p></article>
+          <article class="odd-card reveal"><span class="odd-status odd-status--rec">建议</span><h4>维修 / 构型</h4><p>批准手册、独立签放、软件/硬件版本一致；分体架构增加复装风险。</p></article>
+        </div>
+
+        <div class="hm-block reveal">
+          <div class="hm-head">
+            <div>
+              <div class="mono-label">HUMAN–VEHICLE–ENVIRONMENT</div>
+              <h3>人机回路：每一个箭头都可能断</h3>
+            </div>
+            <p>飞行汽车不是“会飞的车”，而是一个把人、飞行器、地面系统与空域放在同一个控制回路里的复杂系统。</p>
+          </div>
+          <div class="hm-figure">
+            <svg class="hm-svg" viewBox="0 0 1000 440" role="img" aria-labelledby="hm-title hm-desc">
+              <title id="hm-title">飞行员—飞行器—环境人机回路</title>
+              <desc id="hm-desc">飞行员感知环境与飞行器状态，判断模式与能量，通过单杆操纵飞行器，飞行器反馈运动、显示与告警；每个环节都有对应的失效或人因风险。</desc>
+              <defs>
+                <marker id="hmArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10z" fill="#6d7e7f"/></marker>
+              </defs>
+              <g class="hm-box" transform="translate(60,150)">
+                <rect width="190" height="90" rx="3"/><text x="16" y="28" class="svg-kicker">SENSE</text><text x="16" y="54" class="svg-label">感知</text><text x="16" y="74" class="svg-small">目视 / 前庭 / 仪表</text>
+              </g>
+              <g class="hm-box" transform="translate(390,60)">
+                <rect width="220" height="90" rx="3"/><text x="16" y="28" class="svg-kicker">DECIDE</text><text x="16" y="54" class="svg-label">判断 / 决策</text><text x="16" y="74" class="svg-small">模式 / 能量 / 避让</text>
+              </g>
+              <g class="hm-box" transform="translate(740,150)">
+                <rect width="190" height="90" rx="3"/><text x="16" y="28" class="svg-kicker">ACT</text><text x="16" y="54" class="svg-label">操纵</text><text x="16" y="74" class="svg-small">单杆 / 自动模式</text>
+              </g>
+              <g class="hm-box" transform="translate(390,310)">
+                <rect width="220" height="90" rx="3"/><text x="16" y="28" class="svg-kicker">FEEDBACK</text><text x="16" y="54" class="svg-label">反馈</text><text x="16" y="74" class="svg-small">运动 / 显示 / 告警</text>
+              </g>
+              <g stroke="#6d7e7f" stroke-width="1.6" fill="none" marker-end="url(#hmArrow)">
+                <path d="M250 180C300 150 330 120 385 108"/>
+                <path d="M610 105C670 115 710 135 738 170"/>
+                <path d="M835 240C835 285 780 310 740 330"/>
+                <path d="M610 355C540 370 470 330 440 240"/>
+                <path d="M390 200C340 220 300 220 255 220"/>
+              </g>
+              <g class="hm-risk">
+                <text x="270" y="128">眩光 / 线缆 / 扬尘</text>
+                <text x="660" y="105">模式混淆 / 过载</text>
+                <text x="745" y="270">过量 / 反向输入</text>
+                <text x="485" y="392">告警疲劳 / 延迟</text>
+                <text x="300" y="245">情景意识丧失</text>
+              </g>
+              <text x="500" y="215" text-anchor="middle" class="svg-mono">PILOT + FCC / SHARED AUTHORITY</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="table-block reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">SOTIF SCENARIOS</div>
+              <h3>“系统没坏，但场景超出能力”的八种情况</h3>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th scope="col">场景</th><th scope="col">性能限制</th><th scope="col">可能后果</th><th scope="col">需要的证据 / 措施</th></tr></thead>
+              <tbody>
+                <tr><td>逆光 / 眩光</td><td>目视探测距离下降</td><td>未发现线缆/障碍</td><td>时段限制、遮光、训练、航路规划</td></tr>
+                <tr><td>城市背景</td><td>目标与背景融合</td><td>碰撞、误判距离</td><td>场景试验、障碍数据库、目视程序</td></tr>
+                <tr><td>低空线缆</td><td>细目标难见、无告警</td><td>缠绕、失控、迫降</td><td>线缆地图、飞行高度策略、告警</td></tr>
+                <tr><td>扬尘 / 沙尘</td><td>视觉参考丧失、进气/传感器污染</td><td>姿态失控、动力降级</td><td>风限、场地硬化、中止程序</td></tr>
+                <tr><td>鸟群</td><td>动态目标、突发</td><td>撞击、桨叶损伤</td><td>观察避让、时间窗、损伤容限</td></tr>
+                <tr><td>GNSS 降级</td><td>定位漂移、围栏失效</td><td>偏航、误入禁区</td><td>多源导航、降级模式、训练</td></tr>
+                <tr><td>起降区人员/车辆</td><td>地面冲突、下洗</td><td>人员伤害、碰撞</td><td>隔离区、信号员、清场程序</td></tr>
+                <tr><td>单杆误输入</td><td>杆量与响应不匹配</td><td>过量姿态、低空失控</td><td>包线保护、杆位提示、触觉告警</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">SOTIF 的关键不是“找出故障”，而是“找出系统正常但能力不足的场景”。这些场景必须进入训练、手册与运行限制。</p>
+        </div>
+
+        <div class="mode-block reveal">
+          <div class="mode-copy">
+            <div class="mono-label">MODE CONFUSION / STATE DIAGRAM</div>
+            <h3>手/自动之间，最危险的是“没有明确边界”</h3>
+            <p>模式转换必须回答四个问题：谁有权限？转换条件是什么？转换时告警是什么？传感器降级后进入哪个模式？如果答案不清楚，飞行员就会用错误的预期去解释正确的系统行为。</p>
+          </div>
+          <div class="mode-diagram" role="img" aria-label="手动与自动模式转换示意，转换边界存在模式混淆风险">
+            <div class="mode-box"><span class="mono-label">MODE A</span><b>MANUAL</b><small>单杆直接控制</small></div>
+            <div class="mode-transfer">
+              <span>转换条件</span>
+              <i>⇄</i>
+              <span>权限 / 告警</span>
+              <em>模式混淆 / 自动化惊讶</em>
+            </div>
+            <div class="mode-box mode-box--accent"><span class="mono-label">MODE B</span><b>AUTO</b><small>自动稳定 / 辅助</small></div>
+          </div>
+        </div>
+
+        <div class="training-block reveal">
+          <div class="mono-label">TRAINING / COMPETENCY, NOT “5 MINUTES”</div>
+          <h3>“5 分钟上手”不是“5 分钟胜任”</h3>
+          <ul class="training-list">
+            <li><b>机型培训：</b>构型、能量、模式、告警、应急程序，不能只用汽车驾驶经验迁移。</li>
+            <li><b>应急演练：</b>单电机失效、电池告警、模式失配、迫降、起火撤离，必须形成肌肉记忆。</li>
+            <li><b>情景训练：</b>逆光、线缆、阵风、人群、GNSS 降级，而不是只飞标准起落航线。</li>
+            <li><b>复训与近期经历：</b>低频次运行更容易技能退化；需要定期复训与飞行前准备。</li>
+            <li><b>单飞行员 CRM：</b>没有副驾驶交叉检查，更需要标准喊话、检查单与“停下来”的文化。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 SECURITY -->
+    <section class="section section--dark" id="security" aria-labelledby="security-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">08 / SECURITY &amp; OPERATIONS</div>
+          <h2 id="security-title">当飞机也是联网设备</h2>
+          <p class="section-dek">信息安全不是 IT 附注。对一架可由手机钥匙解锁、由软件更新改变行为的飞行器，网络攻击可以直接变成飞行安全事件。</p>
+        </div>
+
+        <div class="table-block table-block--dark reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">TARA / THREAT &amp; RISK</div>
+              <h3>先保护“能让它动”的资产</h3>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table data-table--dark">
+              <thead><tr><th scope="col">资产</th><th scope="col">威胁</th><th scope="col">安全影响</th><th scope="col">最低措施</th></tr></thead>
+              <tbody>
+                <tr><td>解锁 / 启动命令</td><td>重放、克隆、CAN 注入</td><td>未授权解锁、起飞</td><td>挑战-响应、消息认证、防盗锁止</td></tr>
+                <tr><td>飞控软件 / 参数</td><td>恶意 OTA、供应链植入</td><td>控制律被改变、失控</td><td>安全启动、签名、回滚、双人审批</td></tr>
+                <tr><td>BMS / 高压控制</td><td>诊断口写入、DoS</td><td>过充、接触器误动</td><td>网络分区、白名单、物理锁</td></tr>
+                <tr><td>GNSS / 位置</td><td>干扰、欺骗</td><td>偏航、围栏失效</td><td>多源导航、完整性监控、降级</td></tr>
+                <tr><td>维修诊断</td><td>override 滥用、凭据共享</td><td>互锁被绕过</td><td>双人授权、时限令牌、审计日志</td></tr>
+                <tr><td>乘客数据 / 影像</td><td>泄露、勒索</td><td>隐私与信任损失</td><td>最小化采集、加密、保留策略</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="attack-block reveal">
+          <div class="attack-head">
+            <div>
+              <div class="mono-label">ATTACK SURFACE / ILLUSTRATIVE</div>
+              <h3>六个入口，一个目标</h3>
+            </div>
+            <p>示意性攻击面，不代表已发现漏洞。真正的 TARA 需要资产清单、数据流、信任边界与渗透测试。</p>
+          </div>
+          <div class="attack-figure">
+            <svg class="attack-svg" viewBox="0 0 1000 500" role="img" aria-labelledby="attack-title attack-desc">
+              <title id="attack-title">X3-F 数字攻击面示意</title>
+              <desc id="attack-desc">手机钥匙、诊断口、OTA、GNSS、供应链与维修模式六个入口围绕中央的解锁与飞行控制资产。</desc>
+              <defs>
+                <marker id="attackArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 10 5 0 10z" fill="#e0522b"/></marker>
+              </defs>
+              <circle cx="500" cy="250" r="170" fill="none" stroke="#f3efe6" stroke-opacity=".12" stroke-dasharray="4 8"/>
+              <g class="attack-center" transform="translate(370,195)">
+                <rect width="260" height="110" rx="5"/>
+                <text x="130" y="30" text-anchor="middle" class="svg-kicker">TARGET / SAFETY-CRITICAL</text>
+                <text x="130" y="58" text-anchor="middle" class="svg-label">解锁 · 构型 · 飞控</text>
+                <text x="130" y="82" text-anchor="middle" class="svg-small">软件定义的行为 = 安全边界</text>
+              </g>
+              <g class="attack-node" transform="translate(60,50)"><rect width="180" height="62" rx="3"/><text x="14" y="24" class="svg-small">手机钥匙 / APP</text><text x="14" y="44" class="svg-kicker">REPLAY / CLONE</text></g>
+              <g class="attack-node" transform="translate(760,50)"><rect width="180" height="62" rx="3"/><text x="14" y="24" class="svg-small">OTA / 云端</text><text x="14" y="44" class="svg-kicker">MALICIOUS UPDATE</text></g>
+              <g class="attack-node" transform="translate(60,390)"><rect width="180" height="62" rx="3"/><text x="14" y="24" class="svg-small">诊断口 / CAN</text><text x="14" y="44" class="svg-kicker">INJECTION</text></g>
+              <g class="attack-node" transform="translate(760,390)"><rect width="180" height="62" rx="3"/><text x="14" y="24" class="svg-small">GNSS / 通信</text><text x="14" y="44" class="svg-kicker">SPOOF / JAM</text></g>
+              <g class="attack-node" transform="translate(60,220)"><rect width="180" height="62" rx="3"/><text x="14" y="24" class="svg-small">维修模式</text><text x="14" y="44" class="svg-kicker">OVERRIDE ABUSE</text></g>
+              <g class="attack-node" transform="translate(760,220)"><rect width="180" height="62" rx="3"/><text x="14" y="24" class="svg-small">供应链</text><text x="14" y="44" class="svg-kicker">COMPONENT IMPLANT</text></g>
+              <g stroke="#e0522b" stroke-width="1.6" fill="none" marker-end="url(#attackArrow)" opacity=".8">
+                <path d="M240 80 360 195"/><path d="M760 80 640 195"/>
+                <path d="M240 420 360 305"/><path d="M760 420 640 305"/>
+                <path d="M240 251H360"/><path d="M760 251H640"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="security-grid">
+          <article class="security-card reveal"><span>01</span><h4>安全启动 / 签名更新</h4><p>只有受信任的固件能运行；OTA 需签名、版本回滚保护与双人审批，更新后执行回归测试。</p></article>
+          <article class="security-card reveal"><span>02</span><h4>网络分区</h4><p>把信息娱乐、诊断、飞控与高压控制分域；跨域只允许白名单报文，不允许“一根 CAN 总线打通全车”。</p></article>
+          <article class="security-card reveal"><span>03</span><h4>强身份与最小权限</h4><p>手机钥匙用挑战-响应，维修令牌限时/限人/限操作；所有 override 留痕并可追溯。</p></article>
+          <article class="security-card reveal"><span>04</span><h4>入侵检测与日志</h4><p>监控异常报文、异常解锁、异常 OTA；日志防篡改，事故后可重建时间线。</p></article>
+          <article class="security-card reveal"><span>05</span><h4>供应链可信</h4><p>关键芯片/模块的来源、固件哈希、生产烧录与防篡改；不要把供应链风险留给“信任”。</p></article>
+          <article class="security-card reveal"><span>06</span><h4>安全影响评估</h4><p>任何 OTA、参数变更、诊断功能上线，都要先评估对安全案例的影响，再决定是否放行。</p></article>
+        </div>
+
+        <div class="ops-block reveal">
+          <div class="mono-label">OPERATIONS / LAST LINE OF DEFENSE</div>
+          <h3>运行安全：把“最后一次机会”前移</h3>
+          <div class="ops-grid">
+            <div><b>场地</b><p>净空、风向、人群隔离、消防与救援通道；起降区与观众区物理分隔。</p></div>
+            <div><b>气象</b><p>GO/NO-GO 矩阵：风、能见、降水、雷暴、温度；不把“今天能飞”当成“今天该飞”。</p></div>
+            <div><b>空域</b><p>UTM / 空域许可 / NOTAM / 地理围栏；飞行前复核，飞行中监控。</p></div>
+            <div><b>应急</b><p>迫降场、起火、撤离、救援接口；与地方消防/医疗建立联动。</p></div>
+            <div><b>维修</b><p>定检、循环计数、腐蚀/疲劳检查、软件版本核对；独立签放。</p></div>
+            <div><b>学习</b><p>事件报告、FOQA/FDM、复盘与改正措施；建立 Just Culture，让坏消息早一点出现。</p></div>
+          </div>
+        </div>
+
+        <div class="callout callout--warn reveal">
+          <div class="callout-mark">Δ</div>
+          <div>
+            <h4>变更管理：一次 OTA 可能让安全案例失效</h4>
+            <p>安全案例不是取证时的一次性文件。控制律、告警逻辑、电池策略、诊断权限的任何变更，都可能改变危害链。变更必须回到“危害—需求—验证”的闭环，而不是只发一个更新说明。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 REQUIREMENTS -->
+    <section class="section" id="requirements" aria-labelledby="requirements-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">09 / REQUIREMENTS &amp; ASSURANCE</div>
+          <h2 id="requirements-title">把安全主张变成可验证的要求</h2>
+          <p class="section-dek">每条安全需求都应能追溯到危害、分配到架构、由试验或分析验证，并在运行中持续监控。以下 13 条是本文建议的最小安全需求集。</p>
+        </div>
+
+        <div class="dal-strip reveal" aria-label="参照失效状态分类与概率目标">
+          <div class="dal-card"><span class="mono-label">CATASTROPHIC</span><b>灾难性</b><em>FDAL A · ≤1×10⁻⁶/FH</em><small>多人死亡 / 机毁</small></div>
+          <div class="dal-card"><span class="mono-label">HAZARDOUS</span><b>危险</b><em>FDAL B · ≤1×10⁻⁵/FH</em><small>重伤 / 严重损伤</small></div>
+          <div class="dal-card"><span class="mono-label">MAJOR</span><b>主要</b><em>FDAL C · ≤1×10⁻³/FH</em><small>轻伤 / 紧急处置</small></div>
+          <div class="dal-card"><span class="mono-label">MINOR</span><b>次要</b><em>FDAL D · 定性</em><small>舒适性 / 轻微损伤</small></div>
+        </div>
+        <p class="table-note dal-note">参照 CCAR-23 / AC 23.1309-1E 的失效状态分类与概率目标，仅用于架构与验证的对照，不是 X3-F 的审定结论。灾难性失效状态还应满足“无单一故障”要求；最终目标以局方确定的审定基础为准。</p>
+
+        <div class="filter-bar reveal" role="group" aria-label="按证据状态筛选安全需求">
+          <span class="filter-label">EVIDENCE /</span>
+          <button type="button" class="chip is-active" data-req-filter="all" aria-pressed="true">全部 13</button>
+          <button type="button" class="chip" data-req-filter="gap" aria-pressed="false">未见公开证据 8</button>
+          <button type="button" class="chip" data-req-filter="partial" aria-pressed="false">部分证据 4</button>
+          <button type="button" class="chip" data-req-filter="ok" aria-pressed="false">规章/公开 1</button>
+        </div>
+
+        <div class="table-block reveal">
+          <div class="table-head">
+            <div>
+              <div class="mono-label">TRACEABILITY / SR-01—SR-13</div>
+              <h3>安全需求、危害来源与验证方法</h3>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table req-table">
+              <thead><tr><th scope="col">编号</th><th scope="col">安全需求</th><th scope="col">来源</th><th scope="col">验证</th><th scope="col">公开证据</th></tr></thead>
+              <tbody>
+                <tr data-evidence="gap"><td>SR-01</td><td><b>构型确认：</b>起飞前由两个独立通道确认主/副锁均到位；任一通道不确定则禁止起飞。</td><td>H-01 / 本文</td><td>T · A</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="gap"><td>SR-02</td><td><b>地面互锁：</b>分离/结合仅在驻车、制动、高压断开、乘员离开、运动包络无人时允许。</td><td>H-02 / 本文</td><td>T · I</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="partial"><td>SR-03</td><td><b>单点失效可控：</b>最大重量、最不利重心、风限内，任一电机/桨失效不得导致不可控；需演示失效瞬态与着陆。</td><td>H-03 / 规章</td><td>T · D</td><td><span class="badge badge--partial">部分</span></td></tr>
+                <tr data-evidence="gap"><td>SR-04</td><td><b>失效组合边界：</b>定义可恢复的失效组合；相邻双轴、IMU/FCC 共模不得被“单点失效安全”覆盖。</td><td>H-04/H-06 / 本文</td><td>A · T</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="partial"><td>SR-05</td><td><b>电池热安全：</b>热失控不得导致座舱不可呼吸/不可撤离；需热扩展、排气、灭火与坠撞后完整性验证。</td><td>H-05 / 规章</td><td>T · A</td><td><span class="badge badge--partial">部分</span></td></tr>
+                <tr data-evidence="gap"><td>SR-06</td><td><b>飞控独立性：</b>双通道电源、时钟、传感器、总线独立；单点故障不得产生误导性主姿态。</td><td>H-06 / 本文</td><td>A · T</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="gap"><td>SR-07</td><td><b>模式透明：</b>手/自动模式、转换条件、权限与降级状态清晰告警；转换需明确确认。</td><td>H-07 / 本文</td><td>D · T</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="gap"><td>SR-08</td><td><b>能量储备：</b>建立返航/备降能量策略，考虑风、温度、老化、载荷；不得把最大航时当常规任务时间。</td><td>H-09 / 本文</td><td>A · D</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="partial"><td>SR-09</td><td><b>应急撤离：</b>可生存坠撞后，乘员可在无外部动力下撤离；舱门/约束/灭火/救援接口需演示。</td><td>H-10 / 规章</td><td>T · D</td><td><span class="badge badge--partial">部分</span></td></tr>
+                <tr data-evidence="partial"><td>SR-10</td><td><b>结构完整性：</b>折叠臂、接头、锁止结构按限制/极限载荷与疲劳/腐蚀验证；关键接头用特殊安全系数。</td><td>H-01/H-10 / 规章</td><td>T · A</td><td><span class="badge badge--partial">部分</span></td></tr>
+                <tr data-evidence="gap"><td>SR-11</td><td><b>网络安全：</b>安全启动、签名更新、消息认证、诊断访问控制、入侵检测；OTA 变更需安全影响评估。</td><td>H-11 / 本文</td><td>A · T</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="gap"><td>SR-12</td><td><b>维修与构型：</b>独立签放、软件/硬件构型校验、关键件寿命/循环计数、维修差错防错。</td><td>H-12 / 本文</td><td>I · T</td><td><span class="badge badge--gap">未见</span></td></tr>
+                <tr data-evidence="ok"><td>SR-13</td><td><b>运行边界：</b>昼间目视、私人娱乐/培训、非商业载客；气象/场地/人群/空域门槛写入手册。</td><td>H-08/H-09 / 规章</td><td>I · D</td><td><span class="badge badge--ok">有</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">验证方法：T = 试验，A = 分析，I = 检查，D = 演示。公开证据状态基于截至 2026-11-22 可检索资料；“未见”不等于“未做”。</p>
+        </div>
+
+        <div class="gsn-block reveal">
+          <div class="gsn-head">
+            <div>
+              <div class="mono-label">GSN / SAFETY ARGUMENT</div>
+              <h3>一张图看清：哪些主张已经有证据，哪些还是问号</h3>
+            </div>
+            <p>GSN（Goal Structuring Notation）把安全主张拆成子目标与证据。虚线节点表示公开证据不足，不能用“已取证”替代。</p>
+          </div>
+          <div class="gsn-figure">
+            <svg class="gsn-svg" viewBox="0 0 1000 660" role="img" aria-labelledby="gsn-title gsn-desc">
+              <title id="gsn-title">X3-F 安全案例 GSN 图</title>
+              <desc id="gsn-desc">顶层目标是在限定运行边界内风险可接受，分解为被动、功能、预期功能、行为、信息安全与运行边界六个子目标，并由规章、分析、试验、训练与 TARA 等证据支持。部分子目标公开证据不足。</desc>
+              <defs>
+                <marker id="gsnArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 10 5 0 10z" fill="#8a9a98"/></marker>
+              </defs>
+              <g class="gsn-node gsn-node--goal" transform="translate(330,20)">
+                <rect width="340" height="64" rx="4"/><text x="170" y="26" text-anchor="middle">G1 / 在限定 ODD 内，X3-F 的风险可接受</text><text x="170" y="48" text-anchor="middle">SAFETY GOAL</text>
+              </g>
+              <g class="gsn-node gsn-node--strategy" transform="translate(350,120)">
+                <rect width="300" height="52" rx="4"/><text x="150" y="22" text-anchor="middle">S1 / 按五层防线 + 运行边界论证</text><text x="150" y="40" text-anchor="middle">STRATEGY</text>
+              </g>
+              <path d="M500 84V120M500 172V205M500 205H95M500 205H255M500 205H415M500 205H575M500 205H735M500 205H895" stroke="#8a9a98" stroke-width="1.5" fill="none" marker-end="url(#gsnArrow)"/>
+              <path d="M95 205V235M255 205V235M415 205V235M575 205V235M735 205V235M895 205V235" stroke="#8a9a98" stroke-width="1.5"/>
+
+              <g class="gsn-node" transform="translate(15,235)"><rect width="160" height="70" rx="4"/><text x="80" y="24" text-anchor="middle">G2 / 被动安全</text><text x="80" y="44" text-anchor="middle">坠撞后可生存</text><text x="80" y="60" text-anchor="middle">可撤离</text></g>
+              <g class="gsn-node" transform="translate(175,235)"><rect width="160" height="70" rx="4"/><text x="80" y="24" text-anchor="middle">G3 / 功能安全</text><text x="80" y="44" text-anchor="middle">单点/共模失效</text><text x="80" y="60" text-anchor="middle">可控</text></g>
+              <g class="gsn-node gsn-node--gap" transform="translate(335,235)"><rect width="160" height="70" rx="4"/><text x="80" y="24" text-anchor="middle">G4 / SOTIF</text><text x="80" y="44" text-anchor="middle">ODD 内性能</text><text x="80" y="60" text-anchor="middle">不足可控</text></g>
+              <g class="gsn-node gsn-node--gap" transform="translate(495,235)"><rect width="160" height="70" rx="4"/><text x="80" y="24" text-anchor="middle">G5 / 行为安全</text><text x="80" y="44" text-anchor="middle">人/组织差错</text><text x="80" y="60" text-anchor="middle">被限制</text></g>
+              <g class="gsn-node gsn-node--gap" transform="translate(655,235)"><rect width="160" height="70" rx="4"/><text x="80" y="24" text-anchor="middle">G6 / 信息安全</text><text x="80" y="44" text-anchor="middle">未授权控制</text><text x="80" y="60" text-anchor="middle">被阻止</text></g>
+              <g class="gsn-node" transform="translate(815,235)"><rect width="160" height="70" rx="4"/><text x="80" y="24" text-anchor="middle">G7 / 运行边界</text><text x="80" y="44" text-anchor="middle">昼间目视 /</text><text x="80" y="60" text-anchor="middle">私人培训</text></g>
+
+              <path d="M95 305V345M255 305V345M415 305V345M575 305V345M735 305V345M895 305V345" stroke="#8a9a98" stroke-width="1.2" stroke-dasharray="4 4"/>
+              <g class="gsn-evidence">
+                <g transform="translate(15,345)"><rect width="160" height="64" rx="3"/><text x="12" y="22" class="svg-small">E1 / CAAC 专用条件</text><text x="12" y="42" class="svg-small">结构 · 电池 · 失效</text></g>
+                <g transform="translate(175,345)"><rect width="160" height="64" rx="3"/><text x="12" y="22" class="svg-small">E2 / FHA · STPA</text><text x="12" y="42" class="svg-small">危害与 UCA</text></g>
+                <g transform="translate(335,345)"><rect width="160" height="64" rx="3"/><text x="12" y="22" class="svg-small">E3 / FTA · FMEA</text><text x="12" y="42" class="svg-small">割集与失效模式</text></g>
+                <g transform="translate(495,345)"><rect width="160" height="64" rx="3"/><text x="12" y="22" class="svg-small">E4 / 试验 · 试飞</text><text x="12" y="42" class="svg-small">故障注入 / 包线</text></g>
+                <g transform="translate(655,345)"><rect width="160" height="64" rx="3"/><text x="12" y="22" class="svg-small">E5 / 训练 · 运行</text><text x="12" y="42" class="svg-small">复训 / 事件数据</text></g>
+                <g transform="translate(815,345)"><rect width="160" height="64" rx="3"/><text x="12" y="22" class="svg-small">E6 / TARA · 渗透</text><text x="12" y="42" class="svg-small">威胁与缓解</text></g>
+              </g>
+
+              <g class="gsn-node gsn-node--context" transform="translate(330,460)">
+                <rect width="340" height="52" rx="4"/><text x="170" y="22" text-anchor="middle">C1 / 运行限制：昼间目视 · 私人娱乐/培训</text><text x="170" y="40" text-anchor="middle">不商业载客 · 批准场地 · 合格飞行员</text>
+              </g>
+              <path d="M500 512V560" stroke="#8a9a98" stroke-width="1.5" stroke-dasharray="5 5"/>
+              <g class="gsn-node gsn-node--assumption" transform="translate(300,560)">
+                <rect width="400" height="64" rx="4"/><text x="200" y="24" text-anchor="middle">A1 / 安全案例不是“已取证”的同义词</text><text x="200" y="46" text-anchor="middle">虚线节点 = 公开证据不足，需企业/局方补充</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="release-block reveal">
+          <div class="release-head">
+            <div class="mono-label">RELEASE GATES / 05</div>
+            <h3>五条同时满足，才建议进入载人运行</h3>
+          </div>
+          <div class="release-grid">
+            <div class="gate-card"><span>01</span><h4>构型</h4><p>双通道锁止、起飞抑制、误锁止故障注入全部通过。</p></div>
+            <div class="gate-card"><span>02</span><h4>失效</h4><p>单点/共模失效包线演示，含最大重量、风限、低空。</p></div>
+            <div class="gate-card"><span>03</span><h4>热安全</h4><p>热失控扩展、排气、座舱隔离、撤离与灭火验证。</p></div>
+            <div class="gate-card"><span>04</span><h4>人因</h4><p>模式/告警/转换/复训经过模拟机与试飞验证。</p></div>
+            <div class="gate-card"><span>05</span><h4>运行</h4><p>场地、气象、空域、应急与保险形成闭环。</p></div>
+          </div>
+          <p class="release-note">任何一条不满足，建议只进行限飞/地面试验，不进入载人运行。安全案例应由独立于设计团队的安全评审确认。</p>
+        </div>
+
+        <div class="residual reveal">
+          <div class="mono-label">RESIDUAL RISK STATEMENT</div>
+          <p>即使完成上述验证，剩余风险仍然存在：电池热失控无法被证明“绝对不发生”，共模失效无法被证明“绝对独立”，人的误判无法被证明“绝对消除”。可接受的安全，不是零风险，而是风险被识别、被量化到可比较的程度、被限制在明确边界内，并有持续监控与纠正机制。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10 CONCLUSION -->
+    <section class="section section--accent" id="conclusion" aria-labelledby="conclusion-title">
+      <div class="wrap conclusion-wrap">
+        <div class="section-no">10 / CONCLUSION</div>
+        <h2 id="conclusion-title">安全不是一次取证，<br>而是每一次起飞前重新证明边界</h2>
+        <div class="conclusion-body">
+          <p class="lede">X3-F 的安全性，不取决于它有多少个旋翼，而取决于它能否把“边界”变成可执行的产品属性：锁止是否可验证、能量是否有储备、模式是否可理解、故障是否可隔离、人员是否可撤离。</p>
+          <p>分体式架构是一次有价值的工程折中：它让飞行体摆脱了道路重量与尺寸的束缚，也让“机场”变成了可以装进车里的基础设施。但折中不会消灭风险，只会把风险重新分配。X3-F 把一部分风险从空气动力学转移到了接口、能量与人因；如果安全论证仍按传统飞机的目录做，就会漏掉最危险的部分。</p>
+          <p>因此，最值得关注的不是“它能不能飞”，而是三件事：分合机构能不能被证明“不会假锁止”；电池热失控能不能被限制在可撤离的时间窗内；飞行员在模式、告警和压力下能不能做对。这三件事，比多一个旋翼、多一块屏幕、多一个营销数字更重要。</p>
+        </div>
+
+        <div class="action-grid">
+          <article class="action-card reveal">
+            <div class="mono-label">FOR THE COMPANY</div>
+            <h3>把安全案例当成产品的一部分</h3>
+            <ul>
+              <li>公开分合机构的双通道确认、误锁止注入与循环寿命数据。</li>
+              <li>把“单点失效安全”扩展为“失效组合 + 共模 + 瞬态”的完整包线。</li>
+              <li>建立运行数据闭环，让每一次告警、返航与维修都进入安全案例。</li>
+            </ul>
+          </article>
+          <article class="action-card reveal">
+            <div class="mono-label">FOR THE REGULATOR</div>
+            <h3>用“边界”换“学习速度”</h3>
+            <ul>
+              <li>把专用条件细化到接口、共模、热失控与撤离，而不只覆盖飞行性能。</li>
+              <li>允许在低风险场景先积累运行数据，但用明确的限飞条件兜底。</li>
+              <li>建立事件报告与数据共享机制，避免同类问题在不同营地重复。</li>
+            </ul>
+          </article>
+          <article class="action-card reveal">
+            <div class="mono-label">FOR THE OPERATOR / PILOT</div>
+            <h3>不要把“能飞”当成“该飞”</h3>
+            <ul>
+              <li>严格执行 GO/NO-GO：风、能见、人群、空域、能量，任何一项不满足就不飞。</li>
+              <li>把“5 分钟上手”当成营销，不当成能力；用复训和应急演练建立胜任力。</li>
+              <li>对异常保持“停下来”的纪律：不确定构型、不确定模式、不确定能量，就不起飞。</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="conclusion-sign">
+          <span>— 完 —</span>
+          <span>证据截止 2026-11-22</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11 SOURCES -->
+    <section class="section section--paper" id="sources" aria-labelledby="sources-title">
+      <div class="wrap">
+        <div class="section-head">
+          <div class="section-no">11 / REFERENCES &amp; APPENDIX</div>
+          <h2 id="sources-title">来源、方法与说明</h2>
+          <p class="section-dek">所有来源均在 2026-11-22 访问。A 级为监管/标准，B 级为企业/主流媒体，C 级为行业/学术，D 级为本文分析。引用采用顺序编码。</p>
+        </div>
+
+        <div class="sources-layout">
+          <ol class="source-list">
+            <li id="ref1"><span class="src-grade src-a">A</span><div><b>中国民用航空局.</b> X3-F 型航空器专用条件征求意见稿[Z]. 2025-03-17. <a href="http://www.caac.gov.cn/HDJL/YJZJ/202503/P020250318503054424381.docx" target="_blank" rel="noopener">原文 DOCX</a> · <a href="http://www.caac.gov.cn/HDJL/YJZJ/202503/t20250318_226976.html" target="_blank" rel="noopener">征求意见函</a></div></li>
+            <li id="ref2"><span class="src-grade src-a">A</span><div><b>交通运输部.</b> 民用航空产品和零部件合格审定规定（CCAR-21-R5）[Z]. 2024-03-11. <a href="https://xxgk.mot.gov.cn/jigou/fgs/202403/t20240311_4051654.html" target="_blank" rel="noopener">原文</a></div></li>
+            <li id="ref3"><span class="src-grade src-b">B</span><div><b>小鹏汇天.</b> 飞行体型号合格证（TC）申请获局方受理[EB/OL]. <a href="https://www.xiaopeng.com/news/company_news/5271.html" target="_blank" rel="noopener">原文</a></div></li>
+            <li id="ref4"><span class="src-grade src-b">B</span><div><b>ARIDGE（汇天）.</b> Land Aircraft Carrier 官方产品页[EB/OL]. <a href="https://www.aridge.com/x3" target="_blank" rel="noopener">aridge.com/x3</a></div></li>
+            <li id="ref5"><span class="src-grade src-b">B</span><div><b>新浪财经.</b> 小鹏汇天“陆地航母”飞行体专用条件征求意见：主要用于私人娱乐飞行[N]. 2025-03-19. <a href="https://finance.sina.com.cn/stock/relnews/hk/2025-03-19/doc-ineqehuu1690030.shtml" target="_blank" rel="noopener">原文</a></div></li>
+            <li id="ref6"><span class="src-grade src-c">C</span><div><b>张玉新.</b> 飞行汽车技术基础：第五章 飞行汽车产业分析及支撑技术[Z]. 吉林大学, 2026. 课程讲义。</div></li>
+            <li id="ref7"><span class="src-grade src-a">A</span><div><b>SAE International.</b> ARP4754A — Guidelines for Development of Civil Aircraft and Systems[S]. 2010.</div></li>
+            <li id="ref8"><span class="src-grade src-a">A</span><div><b>SAE International.</b> ARP4761A — Guidelines for Conducting the Safety Assessment Process on Civil Aircraft, Systems, and Equipment[S]. 2023.</div></li>
+            <li id="ref9"><span class="src-grade src-a">A</span><div><b>RTCA.</b> DO-178C — Software Considerations in Airborne Systems and Equipment Certification[S]. 2011.</div></li>
+            <li id="ref10"><span class="src-grade src-a">A</span><div><b>RTCA.</b> DO-254 — Design Assurance Guidance for Airborne Electronic Hardware[S]. 2000.</div></li>
+            <li id="ref11"><span class="src-grade src-a">A</span><div><b>FAA.</b> AC 23.1309-1E — System Safety Analysis and Assessment for Part 23 Airplanes[S]. 2011. <a href="https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC%2023.1309-1E.pdf" target="_blank" rel="noopener">PDF</a></div></li>
+            <li id="ref12"><span class="src-grade src-a">A</span><div><b>ISO.</b> ISO 26262 — Road vehicles — Functional safety[S]. 2018.</div></li>
+            <li id="ref13"><span class="src-grade src-a">A</span><div><b>ISO.</b> ISO 21448 — Road vehicles — Safety of the intended functionality[S]. 2022.</div></li>
+            <li id="ref14"><span class="src-grade src-a">A</span><div><b>ISO/SAE.</b> ISO/SAE 21434 — Road vehicles — Cybersecurity engineering[S]. 2021.</div></li>
+            <li id="ref15"><span class="src-grade src-a">A</span><div><b>U.S. Department of Defense.</b> MIL-STD-882E — System Safety[S]. 2012.</div></li>
+            <li id="ref16"><span class="src-grade src-a">A</span><div><b>RTCA.</b> DO-160G — Environmental Conditions and Test Procedures for Airborne Equipment[S]. 2010.</div></li>
+          </ol>
+
+          <aside class="appendix">
+            <div class="appendix-card">
+              <div class="mono-label">READING MAP</div>
+              <dl class="reading-map">
+                <div><dt>五层安全</dt><dd>§3 · §5–8</dd></div>
+                <div><dt>危害与风险</dt><dd>§4</dd></div>
+                <div><dt>分合接口</dt><dd>§5</dd></div>
+                <div><dt>飞行 / 能源</dt><dd>§6</dd></div>
+                <div><dt>人因 / SOTIF</dt><dd>§7</dd></div>
+                <div><dt>信息安全 / 运行</dt><dd>§8</dd></div>
+                <div><dt>需求 / 验证</dt><dd>§9</dd></div>
+              </dl>
+            </div>
+            <div class="appendix-card">
+              <div class="mono-label">ABBREVIATIONS</div>
+              <p class="abbr">ODD 运行设计域 · SOTIF 预期功能安全 · FHA 功能危害分析 · PSSA 初步系统安全评估 · SSA 系统安全评估 · FTA 故障树 · FMEA 失效模式与影响分析 · CCA 共因分析 · STPA 系统理论过程分析 · TARA 威胁分析与风险评估 · GSN 目标结构化表示 · DAL 开发保证等级</p>
+            </div>
+            <div class="appendix-card">
+              <div class="mono-label">AI USE / 说明</div>
+              <p>本作业在资料检索、结构化分析、图表与前端实现过程中使用了 AI 助手。所有事实性陈述均尽量回溯到公开来源；H 编号、风险等级、SR 编号、评分与情景假设均标注为本文分析，不代表企业或局方结论。AI 不替代对原始来源的核对。</p>
+            </div>
+            <div class="appendix-card">
+              <div class="mono-label">VERSION / 声明</div>
+              <p>v2.0 · 2026-11-22<br>证据截止：2026-11-22<br>范围：X3-F 飞行体、分合接口、陆行体与运行体系。<br>本页为课程作业，不构成适航结论、投资建议或采购建议。</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark">S/C</span>
+        <div><strong>安全论证档案 / SAFETY CASE DOSSIER</strong><p>飞行汽车技术基础 · 课程作业 02 · 2026</p></div>
+      </div>
+      <div class="footer-meta">
+        <span>研究 / 设计 / 前端：课程作业</span>
+        <span>证据截止 2026-11-22</span>
+        <span>提交截止 2026-11-26 18:00</span>
+        <a href="#top">回到顶部 ↑</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>
